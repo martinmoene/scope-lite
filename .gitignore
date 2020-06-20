@@ -1,6 +1,3 @@
-# Prerequisites
-*.d
-
 # Compiled Object files
 *.slo
 *.lo
@@ -18,7 +15,6 @@
 
 # Fortran module files
 *.mod
-*.smod
 
 # Compiled Static libraries
 *.lai
@@ -30,3 +26,15 @@
 *.exe
 *.out
 *.app
+
+# Build folder
+/build/
+
+# CodeBlocks IDE files
+*.layout
+
+# Visual Studio Code
+/.vscode/
+
+# Visual Studio
+/.vs/
