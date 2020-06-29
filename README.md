@@ -116,5 +116,12 @@ The version of *scope lite* is available via tag `[.version]`. The following tag
 ### A.2 scope lite test specification
 
 ```Text
-TBD
+scope_exit: exit function is called at end of scope
+scope_exit: exit function is called when an exception occurs
+scope_exit: exit function is not called at end of scope when released
+scope_fail: exit function is not called when no exception occurs
+scope_fail: exit function is not called when released
+scope_success: exit function is called when no exception occurs
+scope_success: exit function is not called when an exception occurs
+scope_success: exit function is not called when released
 ```
