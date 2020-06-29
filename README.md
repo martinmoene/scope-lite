@@ -119,6 +119,7 @@ The version of *scope lite* is available via tag `[.version]`. The following tag
 scope_exit: exit function is called at end of scope
 scope_exit: exit function is called when an exception occurs
 scope_exit: exit function is not called at end of scope when released
+scope_fail: exit function is called when an exception occurs
 scope_fail: exit function is not called when no exception occurs
 scope_fail: exit function is not called when released
 scope_success: exit function is called when no exception occurs

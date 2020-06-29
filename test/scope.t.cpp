@@ -84,6 +84,24 @@ CASE( "scope_exit: exit function is not called at end of scope when released" )
     EXPECT_NOT( is_called );
 }
 
+CASE( "scope_fail: exit function is called when an exception occurs" )
+{
+    is_called = false;
+
+    try
+    {
+#if scope_CPP11_OR_GREATER
+        auto guard = make_scope_fail( on_fail );
+#else
+        scope_fail guard = make_scope_fail( on_fail );
+#endif
+        throw std::exception();
+    }
+    catch(...) {}
+
+    EXPECT( is_called );
+}
+
 CASE( "scope_fail: exit function is not called when no exception occurs" )
 {
     is_called = false;
@@ -158,7 +176,7 @@ CASE( "scope_success: exit function is not called when an exception occurs" )
     EXPECT_NOT( is_called );
 }
 
-CASE( "scope_success: exit function is not called when released()" )
+CASE( "scope_success: exit function is not called when released" )
 {
     is_called = false;
 
