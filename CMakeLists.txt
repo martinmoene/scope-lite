@@ -1,24 +1,24 @@
 # Copyright 2020 by Martin Moene
 #
-# https://github.com/martinmoene/scope-guard-lite
+# https://github.com/martinmoene/scope-lite
 #
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 cmake_minimum_required( VERSION 3.5 FATAL_ERROR )
 
-# scope-guard-lite project and version, updated by script/update-version.py:
+# scope-lite project and version, updated by script/update-version.py:
 
 project(
-    scope_guard_lite
+    scope_lite
     VERSION 0.1.0
-#   DESCRIPTION "A C++17-like bit, a type-safe container for single values of bit type for C++98, C++11 and later in a single-file header-only library"
-#   HOMEPAGE_URL "https://github.com/martinmoene/scope-guard-lite"
+#   DESCRIPTION "C++ standard libraries extensions, version 3: Generic scope and RAII Wrapper for C++98, C++11 and later in a single-file header-only library"
+#   HOMEPAGE_URL "https://github.com/martinmoene/scope-lite"
     LANGUAGES CXX )
 
 # Package information:
 
-set( unit_name       "scope-guard" )
+set( unit_name       "scope" )
 set( package_nspace  "nonstd" )
 set( package_name    "${unit_name}-lite" )
 set( package_version "${${PROJECT_NAME}_VERSION}" )
@@ -28,27 +28,27 @@ message( STATUS "Project '${PROJECT_NAME}', package '${package_name}' version: '
 # Toplevel or subproject:
 
 if ( CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME )
-    set( bit_IS_TOPLEVEL_PROJECT TRUE )
+    set( scope_IS_TOPLEVEL_PROJECT TRUE )
 else()
-    set( bit_IS_TOPLEVEL_PROJECT FALSE )
+    set( scope_IS_TOPLEVEL_PROJECT FALSE )
 endif()
 
 # If toplevel project, enable building and performing of tests, disable building of examples:
 
-option( BIT_LITE_OPT_BUILD_TESTS    "Build and perform scope-guard-lite tests" ${bit_IS_TOPLEVEL_PROJECT} )
-option( BIT_LITE_OPT_BUILD_EXAMPLES "Build scope-guard-lite examples" OFF )
+option( SCOPE_LITE_OPT_BUILD_TESTS    "Build and perform scope-lite tests" ${scope_IS_TOPLEVEL_PROJECT} )
+option( SCOPE_LITE_OPT_BUILD_EXAMPLES "Build scope-lite examples" OFF )
 
-option( BIT_LITE_OPT_SELECT_STD     "Select std::bit"    OFF )
-option( BIT_LITE_OPT_SELECT_NONSTD  "Select nonstd::bit" OFF )
+option( SCOPE_LITE_OPT_SELECT_STD     "Select std::scope"    OFF )
+option( SCOPE_LITE_OPT_SELECT_NONSTD  "Select nonstd::scope" OFF )
 
 # If requested, build and perform tests, build examples:
 
-if ( BIT_LITE_OPT_BUILD_TESTS )
+if ( SCOPE_LITE_OPT_BUILD_TESTS )
     enable_testing()
     add_subdirectory( test )
 endif()
 
-if ( BIT_LITE_OPT_BUILD_EXAMPLES )
+if ( SCOPE_LITE_OPT_BUILD_EXAMPLES )
     add_subdirectory( example )
 endif()
 

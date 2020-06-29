@@ -57,7 +57,7 @@
 // Use C++20 std bit operations if available and requested:
 
 #if scope_CPP20_OR_GREATER && defined(__has_include )
-# if __has_include( <bit> )
+# if __has_include( <scope> )
 #  define scope_HAVE_STD_SCOPE  1
 # else
 #  define scope_HAVE_STD_SCOPE  0
@@ -82,6 +82,10 @@ namespace nonstd
     using std::scope_fail;
     using std::scope_success;
     using std::unique_resource;
+
+    using std::make_scope_exit;
+    using std::make_scope_fail;
+    using std::make_scope_success;
 }
 
 #else // scope_USES_STD_SCOPE
@@ -655,7 +659,7 @@ noexcept
 
 // optional factory functions (should at least be present for LFTS3):
 
-template< class EF>
+template< class EF >
 scope_exit<typename std14::decay<EF>::type>
 make_scope_exit( EF && exit_function )
 {

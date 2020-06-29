@@ -176,16 +176,16 @@ else()
     endif()
 endif()
 
-# with C++17, honour explicit request for std::scope or nonstd::scope:
+# with C++??, honour explicit request for std::scope or nonstd::scope:
 
 if( HAS_CPP17_FLAG )
-    set( WHICH scope_BIT_DEFAULT )
+    set( WHICH scope_SCOPE_DEFAULT )
 
-    if( BIT_LITE_OPT_SELECT_STD )
-        set( WHICH scope_BIT_STD )
-    elseif( BIT_LITE_OPT_SELECT_NONSTD )
-        set( WHICH scope_BIT_NONSTD )
-    endif()
+    # if( SCOPE_LITE_OPT_SELECT_STD )
+    #     set( WHICH scope_SCOPE_STD )
+    # elseif( SCOPE_LITE_OPT_SELECT_NONSTD )
+    #     set( WHICH scope_SCOPE_NONSTD )
+    # endif()
 
     target_compile_definitions( ${PROGRAM}-cpp17.t PRIVATE scope_CONFIG_SELECT_BIT=${WHICH} )
 
