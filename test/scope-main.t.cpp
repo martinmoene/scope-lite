@@ -37,6 +37,7 @@ CASE( "scope-lite configuration" "[.scope][.config]" )
     scope_PRESENT( scope_SCOPE_STD );
     scope_PRESENT( scope_CONFIG_SELECT_SCOPE );
     // scope_PRESENT( scope_CONFIG_NO_EXCEPTIONS );
+    scope_PRESENT( scope_USE_POST_CPP98_VERSION );
     scope_PRESENT( scope_CPLUSPLUS );
 }
 
@@ -67,20 +68,16 @@ CASE( "Presence of C++ language features" "[.stdlanguage]" )
 #if scope_USES_STD_SCOPE
     std::cout << "(Presence of C++ language features not available: using stdandard <scope>)\n";
 #else
-//  scope_PRESENT( scope_HAVE_AUTO );
-    // scope_PRESENT( scope_HAVE_NULLPTR );
-    // scope_PRESENT( scope_HAVE_STATIC_ASSERT );
-    // scope_PRESENT( scope_HAVE_DEFAULT_FUNCTION_TEMPLATE_ARG );
-//  scope_PRESENT( scope_HAVE_ALIAS_TEMPLATE );
     scope_PRESENT( scope_HAVE_CONSTEXPR_11 );
     scope_PRESENT( scope_HAVE_CONSTEXPR_14 );
-    // scope_PRESENT( scope_HAVE_ENUM_CLASS );
-//  scope_PRESENT( scope_HAVE_ENUM_CLASS_CONSTRUCTION_FROM_UNDERLYING_TYPE );
-//  scope_PRESENT( scope_HAVE_EXPLICIT_CONVERSION );
-    // scope_PRESENT( scope_HAVE_INITIALIZER_LIST );
-//  scope_PRESENT( scope_HAVE_IS_DEFAULT );
-//  scope_PRESENT( scope_HAVE_IS_DELETE );
+    scope_PRESENT( scope_HAVE_DECAY );
+    scope_PRESENT( scope_HAVE_DEDUCTION_GUIDES );
+    scope_PRESENT( scope_HAVE_DEFAULT_FUNCTION_TEMPLATE_ARG );
+    scope_PRESENT( scope_HAVE_NODISCARD );
     scope_PRESENT( scope_HAVE_NOEXCEPT );
+    scope_PRESENT( scope_HAVE_IS_DEFAULT );
+    scope_PRESENT( scope_HAVE_IS_DELETE );
+    scope_PRESENT( scope_HAVE_STATIC_ASSERT );
 #endif
 }
 
@@ -95,6 +92,9 @@ CASE( "Presence of C++ library features" "[.stdlibrary]" )
     scope_PRESENT( scope_HAVE_IS_TRIVIALLY_COPYABLE );
     scope_PRESENT( scope_HAVE_IS_COPY_CONSTRUCTIBLE );
     scope_PRESENT( scope_HAVE_IS_MOVE_CONSTRUCTIBLE );
+    scope_PRESENT( scope_HAVE_IS_NOTHROW_CONSTRUCTIBLE );
+    scope_PRESENT( scope_HAVE_IS_NOTHROW_MOVE_CONSTRUCTIBLE );
+    scope_PRESENT( scope_HAVE_UNCAUGHT_EXCEPTIONS );
 #endif
 
 #if defined _HAS_CPP0X

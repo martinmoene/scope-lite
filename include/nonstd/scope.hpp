@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2020-2020 Martin Moene
 //
-// https://github.com/martinmoene/bit-lite
+// https://github.com/martinmoene/scope-lite
 //
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -23,7 +23,7 @@
 #define scope_STRINGIFY(  x )  scope_STRINGIFY_( x )
 #define scope_STRINGIFY_( x )  #x
 
-// bit-lite configuration:
+// scope-lite configuration:
 
 #define scope_SCOPE_DEFAULT  0
 #define scope_SCOPE_NONSTD   1
@@ -54,7 +54,7 @@
 #define scope_CPP17_OR_GREATER  ( scope_CPLUSPLUS >= 201703L )
 #define scope_CPP20_OR_GREATER  ( scope_CPLUSPLUS >= 202000L )
 
-// Use C++20 std bit operations if available and requested:
+// Use C++yy <scope> if available and requested:
 
 #if scope_CPP20_OR_GREATER && defined(__has_include )
 # if __has_include( <scope> )
@@ -69,7 +69,7 @@
 #define  scope_USES_STD_SCOPE  ( (scope_CONFIG_SELECT_SCOPE == scope_SCOPE_STD) || ((scope_CONFIG_SELECT_SCOPE == scope_SCOPE_DEFAULT) && scope_HAVE_STD_SCOPE) )
 
 //
-// Using std <bit>:
+// Using std <scope>:
 //
 
 #if scope_USES_STD_SCOPE
@@ -179,6 +179,7 @@ namespace nonstd
 
 #define scope_HAVE_CONSTEXPR_11           scope_CPP11_140
 // #define scope_HAVE_ENUM_CLASS             scope_CPP11_110
+#define scope_HAVE_IS_DEFAULT             scope_CPP11_120
 #define scope_HAVE_IS_DELETE              scope_CPP11_120
 #define scope_HAVE_NOEXCEPT               scope_CPP11_140
 #define scope_HAVE_DEFAULT_FUNCTION_TEMPLATE_ARG  scope_CPP11_120
@@ -210,7 +211,7 @@ namespace nonstd
 // #define scope_HAVE_IS_SAME                scope_HAVE_TYPE_TRAITS
 // #define scope_HAVE_IS_SAME_TR1            scope_HAVE_TR1_TYPE_TRAITS
 
-#define scope_HAVE_CSTDINT                scope_CPP11_90
+// #define scope_HAVE_CSTDINT                scope_CPP11_90
 
 // Presence of C++14 library features:
 
@@ -242,8 +243,10 @@ namespace nonstd
 
 #if scope_HAVE_NOEXCEPT
 # define scope_noexcept noexcept
+# define scope_noexcept_op(expr) noexcept(expr)
 #else
 # define scope_noexcept /*noexcept*/
+# define scope_noexcept_op(expr) /*noexcept(expr)*/
 #endif
 
 #if scope_HAVE_NODISCARD
@@ -251,6 +254,10 @@ namespace nonstd
 #else
 # define scope_nodiscard /*[[nodiscard]]*/
 #endif
+
+// Select C++98 version
+
+#define scope_USE_POST_CPP98_VERSION  scope_CPP11_110
 
 // Additional includes:
 
@@ -278,7 +285,7 @@ namespace nonstd
 # if !scope_BETWEEN( scope_COMPILER_MSVC_VERSION, 1, 140 )
 #  define scope_ENABLE_IF_(VA) , typename std::enable_if< ( VA ), int >::type = 0
 # else
-#  define scope_ENABLE_IF_(VA) , typename = typename std::enable_if< ( VA ), ::nonstd::bit::enabler >::type
+#  define scope_ENABLE_IF_(VA) , typename = typename std::enable_if< ( VA ), ::nonstd::scope::enabler >::type
 # endif
 #else
 # define  scope_ENABLE_IF_(VA)
@@ -286,6 +293,10 @@ namespace nonstd
 
 namespace nonstd {
 namespace scope {
+
+// for bit_ENABLE_IF_():
+
+/*enum*/ class enabler{};
 
 // C++11 emulation:
 
@@ -447,7 +458,7 @@ make_unique_resource( reference_wrapper<R> r, D&& d) noexcept(is_nothrow_constru
 
 #endif // reference
 
-#if scope_CPP11_OR_GREATER || scope_COMPILER_MSVC_VERSION >= 110
+#if scope_USE_POST_CPP98_VERSION
 
 //
 // Post-C++98 version:
@@ -459,44 +470,46 @@ class scope_exit
 public:
     template< class Fn >
     explicit scope_exit( Fn&& fn )
-    noexcept
-    (
+    scope_noexcept_op
+    ((
         std11::is_nothrow_constructible<EF, Fn>::value
         || std11::is_nothrow_constructible<EF, Fn&>::value
-    )
+    ))
         : exit_function( std::forward<Fn>(fn) )     // move/copy
+        , execute_on_destruction( true )
     {}
 
     scope_exit( scope_exit && other )
-    noexcept
-    (
+    scope_noexcept_op
+    ((
         std11::is_nothrow_move_constructible<EF>::value
         || std11::is_nothrow_copy_constructible<EF>::value
-    )
+    ))
         : exit_function( std::move( other.exit_function ) )     // move/copy
         , execute_on_destruction( other.execute_on_destruction )
         // , uncaught_on_creation( other.uncaught_on_creation )
     {}
 
-    ~scope_exit() noexcept( true )
+    ~scope_exit() scope_noexcept_op( true )
     {
         if ( execute_on_destruction )
             exit_function();
     }
 
-    scope_exit( scope_exit const & ) = delete;
-
-    scope_exit & operator=( scope_exit const & ) = delete;
-    scope_exit & operator=( scope_exit &&      ) = delete;
-
-    void release() noexcept
+    void release() scope_noexcept
     {
         execute_on_destruction = false;
     }
 
+scope_is_delete_access:
+    scope_exit( scope_exit const & ) scope_is_delete;
+
+    scope_exit & operator=( scope_exit const & ) scope_is_delete;
+    scope_exit & operator=( scope_exit &&      ) scope_is_delete;
+
 private:
     EF exit_function;
-    bool execute_on_destruction{ true };
+    bool execute_on_destruction; // { true };
     // int uncaught_on_creation{ std17::uncaught_exceptions() };
 };
 
@@ -506,20 +519,21 @@ class scope_fail
 public:
     template< class Fn >
     explicit scope_fail( Fn&& fn )
-    noexcept
-    (
+    scope_noexcept_op
+    ((
         std11::is_nothrow_constructible<EF, Fn>::value
         || std11::is_nothrow_constructible<EF, Fn&>::value
-    )
+    ))
         : exit_function( std::forward<Fn>(fn) )     // move/copy
+        , uncaught_on_creation( std17::uncaught_exceptions() )
     {}
 
     scope_fail( scope_fail && other )
-    noexcept
-    (
+    scope_noexcept_op
+    ((
         std11::is_nothrow_move_constructible<EF>::value
         || std11::is_nothrow_copy_constructible<EF>::value
-    )
+    ))
         : exit_function( std::move( other.exit_function ) )     // move/copy
         // , execute_on_destruction( other.execute_on_destruction )
         , uncaught_on_creation( other.uncaught_on_creation )
@@ -527,26 +541,27 @@ public:
         other.uncaught_on_creation = std::numeric_limits<int>::max();
     }
 
-    ~scope_fail() noexcept( true )
+    ~scope_fail() scope_noexcept_op( true )
     {
         if ( uncaught_on_creation < std17::uncaught_exceptions() )
             exit_function();
     }
 
-    scope_fail( scope_fail const & ) = delete;
-
-    scope_fail & operator=( scope_fail const & ) = delete;
-    scope_fail & operator=( scope_fail &&      ) = delete;
-
-    void release() noexcept
+    void release() scope_noexcept
     {
         uncaught_on_creation = std::numeric_limits<int>::max();
     }
 
+scope_is_delete_access:
+    scope_fail( scope_fail const & ) scope_is_delete;
+
+    scope_fail & operator=( scope_fail const & ) scope_is_delete;
+    scope_fail & operator=( scope_fail &&      ) scope_is_delete;
+
 private:
     EF exit_function;
     // bool execute_on_destruction{ true };
-    int uncaught_on_creation{ std17::uncaught_exceptions() };
+    int uncaught_on_creation; // { std17::uncaught_exceptions() };
 };
 
 template< class EF >
@@ -555,20 +570,21 @@ class scope_success
 public:
     template< class Fn >
     explicit scope_success( Fn&& fn )
-    noexcept
-    (
+    scope_noexcept_op
+    ((
         std11::is_nothrow_constructible<EF, Fn>::value
         || std11::is_nothrow_constructible<EF, Fn&>::value
-    )
+    ))
         : exit_function( std::forward<Fn>(fn) )     // move/copy
+        , uncaught_on_creation( std17::uncaught_exceptions() )
     {}
 
     scope_success( scope_success && other )
-    noexcept
-    (
+    scope_noexcept_op
+    ((
         std11::is_nothrow_move_constructible<EF>::value
         || std11::is_nothrow_copy_constructible<EF>::value
-    )
+    ))
         : exit_function( std::move( other.exit_function ) )     // move/copy
         // , execute_on_destruction( other.execute_on_destruction )
         , uncaught_on_creation( other.uncaught_on_creation )
@@ -576,26 +592,27 @@ public:
         other.uncaught_on_creation = -1;
     }
 
-    ~scope_success() noexcept( true )
+    ~scope_success() scope_noexcept_op( true )
     {
         if ( uncaught_on_creation >= std17::uncaught_exceptions() )
             exit_function();
     }
 
-    scope_success( scope_success const & ) = delete;
-
-    scope_success & operator=( scope_success const & ) = delete;
-    scope_success & operator=( scope_success &&      ) = delete;
-
-    void release() noexcept
+    void release() scope_noexcept
     {
         uncaught_on_creation = -1;
     }
 
+scope_is_delete_access:
+    scope_success( scope_success const & ) scope_is_delete;
+
+    scope_success & operator=( scope_success const & ) scope_is_delete;
+    scope_success & operator=( scope_success &&      ) scope_is_delete;
+
 private:
     EF exit_function;
     // bool execute_on_destruction{ true };
-    int uncaught_on_creation{ std17::uncaught_exceptions() };
+    int uncaught_on_creation; // { std17::uncaught_exceptions() };
 };
 
 #if scope_HAVE( DEDUCTION_GUIDES )
@@ -610,25 +627,25 @@ public:
     unique_resource();
 
     template <class RR, class DD>
-    unique_resource(RR&& r, DD&& d) noexcept(true/*see below*/);
+    unique_resource(RR&& r, DD&& d) scope_noexcept_op(true/*see below*/);
 
-    unique_resource(unique_resource&& rhs) noexcept(true/*see below*/);
+    unique_resource(unique_resource&& rhs) scope_noexcept_op(true/*see below*/);
     ~unique_resource();
 
-    unique_resource& operator=(unique_resource&& rhs) noexcept(true/*see below*/);
+    unique_resource& operator=(unique_resource&& rhs) scope_noexcept_op(true/*see below*/);
 
-    void reset() noexcept;
+    void reset() scope_noexcept;
 
     template <class RR>
     void reset(RR&& r);
 
-    void release() noexcept;
-    const R& get() const noexcept;
+    void release() scope_noexcept;
+    const R& get() const scope_noexcept;
 
-    /*see below*/void operator*() const noexcept;
-    R operator->() const noexcept;
+    /*see below*/void operator*() const scope_noexcept;
+    R operator->() const scope_noexcept;
 
-    const D& get_deleter() const noexcept;
+    const D& get_deleter() const scope_noexcept;
 
 private:
 //    using R1 = conditional_t< is_reference_v<R>, reference_wrapper<remove_reference_t<R>>, R >; // exposition only
@@ -644,6 +661,8 @@ unique_resource(R, D) -> unique_resource<R, D>;
 
 // special factory function:
 
+#if scope_HAVE_DEFAULT_FUNCTION_TEMPLATE_ARG
+
 template< class R, class D, class S=R >
 unique_resource
 <
@@ -651,11 +670,43 @@ unique_resource
     , typename std14::decay<D>::type
 >
 make_unique_resource_checked( R && r, S const & invalid, D && d )
-noexcept
-(
+scope_noexcept_op
+((
     std11::is_nothrow_constructible<typename std14::decay<R>::type, R>::value
     && std11::is_nothrow_constructible<typename std14::decay<D>::type, D>::value
-);
+));
+
+#else // scope_HAVE_DEFAULT_FUNCTION_TEMPLATE_ARG
+
+// avoid default template arguments:
+
+template< class R, class D >
+unique_resource
+<
+    typename std14::decay<R>::type
+    , typename std14::decay<D>::type
+>
+make_unique_resource_checked( R && r, R const & invalid, D && d )
+scope_noexcept_op
+((
+    std11::is_nothrow_constructible<typename std14::decay<R>::type, R>::value
+    && std11::is_nothrow_constructible<typename std14::decay<D>::type, D>::value
+));
+
+template< class R, class D, class S >
+unique_resource
+<
+    typename std14::decay<R>::type
+    , typename std14::decay<D>::type
+>
+make_unique_resource_checked( R && r, S const & invalid, D && d )
+scope_noexcept_op
+((
+    std11::is_nothrow_constructible<typename std14::decay<R>::type, R>::value
+    && std11::is_nothrow_constructible<typename std14::decay<D>::type, D>::value
+));
+
+#endif // scope_HAVE_DEFAULT_FUNCTION_TEMPLATE_ARG
 
 // optional factory functions (should at least be present for LFTS3):
 
@@ -683,16 +734,16 @@ make_scope_success( EF && exit_function )
 template< class R, class D >
 unique_resource<typename std14::decay<R>::type, typename std14::decay<D>::type>
 make_unique_resource( R && r, D && d )
-noexcept
-(
+scope_noexcept_op
+((
     std11::is_nothrow_constructible<typename std14::decay<R>::type, R>::value
     && std11::is_nothrow_constructible<typename std14::decay<D>::type, D>::value
-);
+));
 
 template< class R, class D >
 unique_resource< R &, typename std14::decay<D>::type >
 make_unique_resource( typename std11::reference_wrapper<R>::type r, D && d )
-noexcept( std11::is_nothrow_constructible<typename std14::decay<D>::type, D>::value );
+scope_noexcept_op(( std11::is_nothrow_constructible<typename std14::decay<D>::type, D>::value ));
 
 #else // #if scope_CPP11_OR_GREATER || scope_COMPILER_MSVC_VERSION >= 110
 

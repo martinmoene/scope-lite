@@ -39,7 +39,7 @@ CASE( "scope_exit: exit function is called at end of scope" )
 
     // scope:
     {
-#if scope_CPP11_OR_GREATER
+#if scope_USE_POST_CPP98_VERSION
         auto guard = make_scope_exit( on_exit );
 #else
         scope_exit guard = make_scope_exit( on_exit );
@@ -55,7 +55,7 @@ CASE( "scope_exit: exit function is called when an exception occurs" )
 
     try
     {
-#if scope_CPP11_OR_GREATER
+#if scope_USE_POST_CPP98_VERSION
         auto guard = make_scope_exit( on_exit );
 #else
         scope_exit guard = make_scope_exit( on_exit );
@@ -73,7 +73,7 @@ CASE( "scope_exit: exit function is not called at end of scope when released" )
 
     // scope:
     {
-#if scope_CPP11_OR_GREATER
+#if scope_USE_POST_CPP98_VERSION
         auto guard = make_scope_exit( on_exit );
 #else
         scope_exit guard = make_scope_exit( on_exit );
@@ -90,7 +90,7 @@ CASE( "scope_fail: exit function is called when an exception occurs" )
 
     try
     {
-#if scope_CPP11_OR_GREATER
+#if scope_USE_POST_CPP98_VERSION
         auto guard = make_scope_fail( on_fail );
 #else
         scope_fail guard = make_scope_fail( on_fail );
@@ -108,7 +108,7 @@ CASE( "scope_fail: exit function is not called when no exception occurs" )
 
     try
     {
-#if scope_CPP11_OR_GREATER
+#if scope_USE_POST_CPP98_VERSION
         auto guard = make_scope_fail( on_fail );
 #else
         scope_fail guard = make_scope_fail( on_fail );
@@ -126,7 +126,7 @@ CASE( "scope_fail: exit function is not called when released" )
 
     try
     {
-#if scope_CPP11_OR_GREATER
+#if scope_USE_POST_CPP98_VERSION
         auto guard = make_scope_fail( on_fail );
 #else
         scope_fail guard = make_scope_fail( on_fail );
@@ -146,7 +146,7 @@ CASE( "scope_success: exit function is called when no exception occurs" )
 
     try
     {
-#if scope_CPP11_OR_GREATER
+#if scope_USE_POST_CPP98_VERSION
         auto guard = make_scope_success( on_success );
 #else
         scope_success guard = make_scope_success( on_success );
@@ -164,7 +164,7 @@ CASE( "scope_success: exit function is not called when an exception occurs" )
 
     try
     {
-#if scope_CPP11_OR_GREATER
+#if scope_USE_POST_CPP98_VERSION
         auto guard = make_scope_success( on_success );
 #else
         scope_success guard = make_scope_success( on_success );
@@ -182,7 +182,7 @@ CASE( "scope_success: exit function is not called when released" )
 
     try
     {
-#if scope_CPP11_OR_GREATER
+#if scope_USE_POST_CPP98_VERSION
         auto guard = make_scope_success( on_success );
 #else
         scope_success guard = make_scope_success( on_success );
