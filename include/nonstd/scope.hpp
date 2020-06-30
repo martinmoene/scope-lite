@@ -259,8 +259,9 @@ namespace nonstd
 
 // Additional includes:
 
-#include <exception>    // for exception, terminate(), uncaught_exceptions()
+#include <exception>    // exception, terminate(), uncaught_exceptions()
 #include <limits>       // std::numeric_limits<>
+#include <utility>      // move(), forward<>(), swap()
 
 #if scope_HAVE_TYPE_TRAITS
 # include <type_traits>
