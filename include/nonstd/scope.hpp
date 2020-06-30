@@ -12,8 +12,6 @@
 #ifndef NONSTD_SCOPE_LITE_HPP
 #define NONSTD_SCOPE_LITE_HPP
 
-#include <iostream>
-
 #define scope_lite_MAJOR  0
 #define scope_lite_MINOR  1
 #define scope_lite_PATCH  0
