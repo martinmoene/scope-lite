@@ -744,7 +744,7 @@ unique_resource< R &, typename std14::decay<D>::type >
 make_unique_resource( typename std11::reference_wrapper<R>::type r, D && d )
 scope_noexcept_op(( std11::is_nothrow_constructible<typename std14::decay<D>::type, D>::value ));
 
-#else // #if scope_CPP11_OR_GREATER || scope_COMPILER_MSVC_VERSION >= 110
+#else // #if scope_USE_POST_CPP98_VERSION
 
 //
 // C++98 version:
@@ -938,7 +938,7 @@ scope_success make_scope_success( EF action )
 //     return ...
 // }
 
-#endif // #if scope_CPP11_OR_GREATER || scope_COMPILER_MSVC_VERSION >= 110
+#endif // #if scope_USE_POST_CPP98_VERSION
 
 }} // namespace nonstd::scope
 
