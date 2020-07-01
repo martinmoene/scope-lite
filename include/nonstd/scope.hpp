@@ -197,17 +197,20 @@ namespace nonstd
 
 #define scope_HAVE_IS_TRIVIAL             scope_CPP11_110
 #define scope_HAVE_IS_TRIVIALLY_COPYABLE  scope_CPP11_110 && !scope_BETWEEN(scope_COMPILER_GNUC_VERSION, 1, 500) // GCC >= 5
+#define scope_HAVE_IS_CONSTRUCTIBLE       scope_CPP11_110
 #define scope_HAVE_IS_COPY_CONSTRUCTIBLE  scope_CPP11_110
 #define scope_HAVE_IS_MOVE_CONSTRUCTIBLE  scope_CPP11_110
 #define scope_HAVE_IS_NOTHROW_CONSTRUCTIBLE scope_CPP11_110
 #define scope_HAVE_IS_NOTHROW_MOVE_CONSTRUCTIBLE scope_CPP11_110
 
+#define scope_HAVE_REMOVE_CV              scope_CPP11_90
+#define scope_HAVE_REMOVE_REFERENCE       scope_CPP11_90
+
 #define scope_HAVE_TYPE_TRAITS            scope_CPP11_90
 #define scope_HAVE_TR1_TYPE_TRAITS        (!! scope_COMPILER_GNUC_VERSION )
 
-// #define scope_HAVE_IS_UNSIGNED            scope_HAVE_TYPE_TRAITS
-// #define scope_HAVE_IS_SAME                scope_HAVE_TYPE_TRAITS
-// #define scope_HAVE_IS_SAME_TR1            scope_HAVE_TR1_TYPE_TRAITS
+#define scope_HAVE_IS_SAME                scope_HAVE_TYPE_TRAITS
+#define scope_HAVE_IS_SAME_TR1            scope_HAVE_TR1_TYPE_TRAITS
 
 // #define scope_HAVE_CSTDINT                scope_CPP11_90
 
@@ -323,6 +326,12 @@ typedef integral_constant< bool, false > false_type;
     template< class T > struct is_copy_constructible : std11::true_type{};
 #endif
 
+#if scope_HAVE( IS_CONSTRUCTIBLE )
+    using std::is_constructible;
+#else
+    template< class T > struct is_constructible : std11::true_type{};
+#endif
+
 #if scope_HAVE( IS_MOVE_CONSTRUCTIBLE )
     using std::is_move_constructible;
 #else
@@ -347,6 +356,27 @@ typedef integral_constant< bool, false > false_type;
     template< class T > struct is_nothrow_move_constructible : std11::true_type{};
 #endif
 
+#if scope_HAVE( IS_SAME )
+    using std::is_same;
+#elif scope_HAVE( IS_SAME_TR1 )
+    using std::tr1::is_same;
+#else
+    template< class T, class U > struct is_same : std11::true_type{};
+#endif
+
+#if scope_HAVE( REMOVE_CV )
+    using std::remove_cv;
+#else
+    template< class T > struct remove_cv{ typedef T type; };
+#endif
+
+#if scope_HAVE( REMOVE_REFERENCE )
+    using std::remove_reference;
+#else
+    template< class T > struct remove_reference{ typedef T type; };
+#endif
+
+
 #if scope_HAVE( REFERENCE_WRAPPER )
     using std::reference_wrapper;
 #else
@@ -364,6 +394,13 @@ namespace std14 {
 #else
     template< class T > struct decay{ typedef T type; };
 #endif
+
+template<bool B, class T, class F>
+struct conditional { typedef T type; };
+
+template<class T, class F>
+struct conditional<false, T, F> { typedef F type; };
+
 }
 
 // C++17 emulation (uncaught_exceptions):
@@ -406,6 +443,27 @@ inline int uncaught_exceptions() scope_noexcept
 #endif // scope_HAVE( UNCAUGHT_EXCEPTIONS )
 
 } // namespace std17
+
+// C++20 emulation:
+
+namespace std20 {
+
+template< class T >
+struct remove_cvref
+{
+    typedef typename std11::remove_cv<typename std11::remove_reference<T>::type>::type type;
+};
+
+template< class T, class U >
+struct same_as : std11::integral_constant<bool, std11::is_same<T,U>::value && std11::is_same<U,T>::value> {};
+
+} // namepsace std20
+
+//
+// Helpers:
+//
+
+// TBD
 
 //
 // For reference:
@@ -467,14 +525,19 @@ template< class EF >
 class scope_exit
 {
 public:
-    template< class Fn >
+    template< class Fn
+        scope_ENABLE_IF_((
+            !std11::is_same<typename std20::remove_cvref<Fn>::type, scope_exit>::value
+            && std11::is_constructible<EF, Fn>::value
+        ))
+    >
     explicit scope_exit( Fn&& fn )
     scope_noexcept_op
     ((
         std11::is_nothrow_constructible<EF, Fn>::value
         || std11::is_nothrow_constructible<EF, Fn&>::value
     ))
-        : exit_function( std::forward<Fn>(fn) )     // move/copy
+        : exit_function( std::forward<Fn>(fn) )
         , execute_on_destruction( true )
     {}
 
@@ -484,14 +547,13 @@ public:
         std11::is_nothrow_move_constructible<EF>::value
         || std11::is_nothrow_copy_constructible<EF>::value
     ))
-        : exit_function( std::move( other.exit_function ) )     // move/copy
+        : exit_function( std::forward<EF>( other.exit_function ) )
         , execute_on_destruction( other.execute_on_destruction )
-        // , uncaught_on_creation( other.uncaught_on_creation )
     {
-        other.execute_on_destruction = false;
+        other.release();
     }
 
-    ~scope_exit() scope_noexcept_op( true )
+    ~scope_exit() scope_noexcept
     {
         if ( execute_on_destruction )
             exit_function();
@@ -511,21 +573,25 @@ scope_is_delete_access:
 private:
     EF exit_function;
     bool execute_on_destruction; // { true };
-    // int uncaught_on_creation{ std17::uncaught_exceptions() };
 };
 
 template< class EF >
 class scope_fail
 {
 public:
-    template< class Fn >
+    template< class Fn
+        scope_ENABLE_IF_((
+            !std11::is_same<typename std20::remove_cvref<Fn>::type, scope_fail>::value
+            && std11::is_constructible<EF, Fn>::value
+        ))
+    >
     explicit scope_fail( Fn&& fn )
     scope_noexcept_op
     ((
         std11::is_nothrow_constructible<EF, Fn>::value
         || std11::is_nothrow_constructible<EF, Fn&>::value
     ))
-        : exit_function( std::forward<Fn>(fn) )     // move/copy
+        : exit_function( std::forward<Fn>(fn) )
         , uncaught_on_creation( std17::uncaught_exceptions() )
     {}
 
@@ -535,14 +601,13 @@ public:
         std11::is_nothrow_move_constructible<EF>::value
         || std11::is_nothrow_copy_constructible<EF>::value
     ))
-        : exit_function( std::move( other.exit_function ) )     // move/copy
-        // , execute_on_destruction( other.execute_on_destruction )
+        : exit_function( std::forward<EF>( other.exit_function ) )
         , uncaught_on_creation( other.uncaught_on_creation )
     {
-        other.uncaught_on_creation = std::numeric_limits<int>::max();
+        other.release();
     }
 
-    ~scope_fail() scope_noexcept_op( true )
+    ~scope_fail() scope_noexcept
     {
         if ( uncaught_on_creation < std17::uncaught_exceptions() )
             exit_function();
@@ -561,7 +626,6 @@ scope_is_delete_access:
 
 private:
     EF exit_function;
-    // bool execute_on_destruction{ true };
     int uncaught_on_creation; // { std17::uncaught_exceptions() };
 };
 
@@ -569,14 +633,19 @@ template< class EF >
 class scope_success
 {
 public:
-    template< class Fn >
+    template< class Fn
+        scope_ENABLE_IF_((
+            !std11::is_same<typename std20::remove_cvref<Fn>::type, scope_success>::value
+            && std11::is_constructible<EF, Fn>::value
+        ))
+    >
     explicit scope_success( Fn&& fn )
     scope_noexcept_op
     ((
         std11::is_nothrow_constructible<EF, Fn>::value
         || std11::is_nothrow_constructible<EF, Fn&>::value
     ))
-        : exit_function( std::forward<Fn>(fn) )     // move/copy
+        : exit_function( std::forward<Fn>(fn) )
         , uncaught_on_creation( std17::uncaught_exceptions() )
     {}
 
@@ -586,14 +655,13 @@ public:
         std11::is_nothrow_move_constructible<EF>::value
         || std11::is_nothrow_copy_constructible<EF>::value
     ))
-        : exit_function( std::move( other.exit_function ) )     // move/copy
-        // , execute_on_destruction( other.execute_on_destruction )
+        : exit_function( std::forward<EF>( other.exit_function ) )
         , uncaught_on_creation( other.uncaught_on_creation )
     {
-        other.uncaught_on_creation = -1;
+        other.release();
     }
 
-    ~scope_success() scope_noexcept_op( true )
+    ~scope_success() scope_noexcept
     {
         if ( uncaught_on_creation >= std17::uncaught_exceptions() )
             exit_function();
@@ -612,7 +680,6 @@ scope_is_delete_access:
 
 private:
     EF exit_function;
-    // bool execute_on_destruction{ true };
     int uncaught_on_creation; // { std17::uncaught_exceptions() };
 };
 

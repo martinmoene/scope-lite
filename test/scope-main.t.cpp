@@ -88,8 +88,10 @@ CASE( "Presence of C++ library features" "[.stdlibrary]" )
 #else
     scope_PRESENT( scope_HAVE_TYPE_TRAITS );
     scope_PRESENT( scope_HAVE_TR1_TYPE_TRAITS );
+    scope_PRESENT( scope_HAVE_IS_SAME );
     scope_PRESENT( scope_HAVE_IS_TRIVIAL );
     scope_PRESENT( scope_HAVE_IS_TRIVIALLY_COPYABLE );
+    scope_PRESENT( scope_HAVE_IS_CONSTRUCTIBLE );
     scope_PRESENT( scope_HAVE_IS_COPY_CONSTRUCTIBLE );
     scope_PRESENT( scope_HAVE_IS_MOVE_CONSTRUCTIBLE );
     scope_PRESENT( scope_HAVE_IS_NOTHROW_CONSTRUCTIBLE );
