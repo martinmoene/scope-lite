@@ -49,6 +49,22 @@ CASE( "scope_exit: exit function is called at end of scope" )
     EXPECT( is_called );
 }
 
+CASE( "scope_exit: exit function is called at end of scope (lambda)" )
+{
+#if scope_USE_POST_CPP98_VERSION
+    is_called = false;
+
+    // scope:
+    {
+        auto guard = make_scope_exit( [](){ is_called = true; } );
+    }
+
+    EXPECT( is_called );
+#else
+    EXPECT( !!"lambda is not available (no C++11)" );
+#endif
+}
+
 CASE( "scope_exit: exit function is called when an exception occurs" )
 {
     is_called = false;
