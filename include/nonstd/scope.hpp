@@ -487,7 +487,9 @@ public:
         : exit_function( std::move( other.exit_function ) )     // move/copy
         , execute_on_destruction( other.execute_on_destruction )
         // , uncaught_on_creation( other.uncaught_on_creation )
-    {}
+    {
+        other.execute_on_destruction = false;
+    }
 
     ~scope_exit() scope_noexcept_op( true )
     {
