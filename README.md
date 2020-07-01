@@ -26,16 +26,18 @@ using namespace nonstd;
 
 int count = 0;
 
-void on_exit() { ++count; }
+namespace on { void exit() { ++count; } }
 
 int main()
 {
-    { auto guard = make_scope_exit(  on_exit ); } // note: on_exit w/o &
-    { auto guard = make_scope_exit( &on_exit ); } // note: &on_exit
+    { auto guard = make_scope_exit(  on::exit ); } // note: on_exit w/o &
+    { auto guard = make_scope_exit( &on::exit ); } // note: &on_exit
 
     return count;
 }
 ```
+
+Note: do not let stdlib's [global function `on_exit()`](https://man7.org/linux/man-pages/man3/on_exit.3.html) bite you. Thanks to [Björn Fahller](@rollbear).
 
 ### Compile and run
 
@@ -123,6 +125,7 @@ The version of *scope lite* is available via tag `[.version]`. The following tag
 
 ```Text
 scope_exit: exit function is called at end of scope
+scope_exit: exit function is called at end of scope (lambda)
 scope_exit: exit function is called when an exception occurs
 scope_exit: exit function is not called at end of scope when released
 scope_fail: exit function is called when an exception occurs
