@@ -258,7 +258,7 @@ namespace nonstd
 
 // Select C++98 version
 
-#define scope_USE_POST_CPP98_VERSION  scope_CPP11_110
+#define scope_USE_POST_CPP98_VERSION  scope_CPP11_100
 
 // Additional includes:
 
