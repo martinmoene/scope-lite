@@ -37,7 +37,7 @@ int main()
 }
 ```
 
-Note: do not let stdlib's [global function `on_exit()`](https://man7.org/linux/man-pages/man3/on_exit.3.html) bite you. Thanks to [Björn Fahller](@rollbear).
+Note: do not let stdlib's [global function `on_exit()`](https://man7.org/linux/man-pages/man3/on_exit.3.html) bite you. Thanks to [Björn Fahller](https://github.com/rollbear).
 
 ### Compile and run
 
