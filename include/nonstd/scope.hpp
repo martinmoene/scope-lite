@@ -465,27 +465,6 @@ struct type_identity { typedef T type; };
 } // namepsace std20
 
 //
-// Helpers:
-//
-
-template< typename T >
-T && conditional_forward( T && t, std11::true_type )
-{
-    return std::forward<T>( t );
-}
-
-template< typename T >
-T const & conditional_forward( T && t, std11::false_type )
-{
-    return t;
-}
-
-// template< typename FE, typename Fn >
-// struct to_argument_type<EF,Fn>
-// {
-// };
-
-//
 // For reference:
 //
 
@@ -540,6 +519,23 @@ make_unique_resource( reference_wrapper<R> r, D&& d) noexcept(is_nothrow_constru
 //
 // Post-C++98 version:
 //
+
+template< typename T >
+T && conditional_forward( T && t, std11::true_type )
+{
+    return std::forward<T>( t );
+}
+
+template< typename T >
+T const & conditional_forward( T && t, std11::false_type )
+{
+    return t;
+}
+
+// template< typename FE, typename Fn >
+// struct to_argument_type<EF,Fn>
+// {
+// };
 
 template< class EF >
 class scope_exit
