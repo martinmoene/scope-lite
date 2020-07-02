@@ -305,8 +305,10 @@ namespace scope {
 namespace std11 {
 
 template< class T, T v > struct integral_constant { enum { value = v }; };
-typedef integral_constant< bool, true  > true_type;
-typedef integral_constant< bool, false > false_type;
+template< bool B       > struct bool_constant : integral_constant<bool, B>{};
+
+typedef bool_constant< true  > true_type;
+typedef bool_constant< false > false_type;
 
 #if scope_HAVE( IS_TRIVIAL )
     using std::is_trivial;
@@ -457,13 +459,31 @@ struct remove_cvref
 template< class T, class U >
 struct same_as : std11::integral_constant<bool, std11::is_same<T,U>::value && std11::is_same<U,T>::value> {};
 
+template< class T >
+struct type_identity { typedef T type; };
+
 } // namepsace std20
 
 //
 // Helpers:
 //
 
-// TBD
+template< typename T >
+T && conditional_forward( T && t, std11::true_type )
+{
+    return std::forward<T>( t );
+}
+
+template< typename T >
+T const & conditional_forward( T && t, std11::false_type )
+{
+    return t;
+}
+
+// template< typename FE, typename Fn >
+// struct to_argument_type<EF,Fn>
+// {
+// };
 
 //
 // For reference:
@@ -537,7 +557,10 @@ public:
         std11::is_nothrow_constructible<EF, Fn>::value
         || std11::is_nothrow_constructible<EF, Fn&>::value
     ))
-        : exit_function( std::forward<Fn>(fn) )
+        : exit_function(
+//            to_argument_type<EF,Fn>( std::forward<Fn>(fn) ) )
+            conditional_forward<Fn>( std::forward<Fn>(fn)
+            , std11::bool_constant< std11::is_nothrow_constructible<EF, Fn>::value >{} ) )
         , execute_on_destruction( true )
     {}
 
@@ -591,7 +614,9 @@ public:
         std11::is_nothrow_constructible<EF, Fn>::value
         || std11::is_nothrow_constructible<EF, Fn&>::value
     ))
-        : exit_function( std::forward<Fn>(fn) )
+        : exit_function(
+            conditional_forward<Fn>( std::forward<Fn>(fn)
+            , std11::bool_constant< std11::is_nothrow_constructible<EF, Fn>::value >{} ) )
         , uncaught_on_creation( std17::uncaught_exceptions() )
     {}
 
@@ -645,7 +670,9 @@ public:
         std11::is_nothrow_constructible<EF, Fn>::value
         || std11::is_nothrow_constructible<EF, Fn&>::value
     ))
-        : exit_function( std::forward<Fn>(fn) )
+        : exit_function(
+            conditional_forward<Fn>( std::forward<Fn>(fn)
+            , std11::bool_constant< std11::is_nothrow_constructible<EF, Fn>::value >{} ) )
         , uncaught_on_creation( std17::uncaught_exceptions() )
     {}
 
