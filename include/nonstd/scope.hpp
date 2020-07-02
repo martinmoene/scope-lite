@@ -343,7 +343,7 @@ typedef bool_constant< false > false_type;
 #if scope_HAVE( IS_NOTHROW_CONSTRUCTIBLE )
     using std::is_nothrow_constructible;
 #else
-    template< class T > struct is_nothrow_constructible : std11::true_type{};
+    template< class T, class U > struct is_nothrow_constructible : std11::true_type{};
 #endif
 
 #if scope_HAVE( IS_NOTHROW_COPY_CONSTRUCTIBLE )
@@ -560,7 +560,7 @@ public:
         : exit_function(
 //            to_argument_type<EF,Fn>( std::forward<Fn>(fn) ) )
             conditional_forward<Fn>( std::forward<Fn>(fn)
-            , std11::bool_constant< std11::is_nothrow_constructible<EF, Fn>::value >{} ) )
+                , std11::bool_constant< std11::is_nothrow_constructible<EF, Fn>::value >() ) )
         , execute_on_destruction( true )
     {}
 
@@ -616,7 +616,7 @@ public:
     ))
         : exit_function(
             conditional_forward<Fn>( std::forward<Fn>(fn)
-            , std11::bool_constant< std11::is_nothrow_constructible<EF, Fn>::value >{} ) )
+            , std11::bool_constant< std11::is_nothrow_constructible<EF, Fn>::value >() ) )
         , uncaught_on_creation( std17::uncaught_exceptions() )
     {}
 
@@ -672,7 +672,7 @@ public:
     ))
         : exit_function(
             conditional_forward<Fn>( std::forward<Fn>(fn)
-            , std11::bool_constant< std11::is_nothrow_constructible<EF, Fn>::value >{} ) )
+            , std11::bool_constant< std11::is_nothrow_constructible<EF, Fn>::value >() ) )
         , uncaught_on_creation( std17::uncaught_exceptions() )
     {}
 
