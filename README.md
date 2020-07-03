@@ -10,7 +10,6 @@
 - [Dependencies](#dependencies)
 - [Installation](#installation)
 - [Synopsis](#synopsis)
-- [Features](#features)
 - [Reported to work with](#reported-to-work-with)
 - [Building the tests](#building-the-tests)
 - [Other implementations of scope](#other-implementations-of-scope)
@@ -58,11 +57,9 @@ $ g++ -std=c++11 -Wall -I../include -o 01-basic 01-basic.cpp && ./01-basic || ec
 
 *scope lite* is distributed under the [Boost Software License](https://github.com/martinmoene/scope-lite/blob/master/LICENSE.txt).
 
-
 ## Dependencies
 
 *scope lite* has no other dependencies than the [C++ standard library](http://en.cppreference.com/w/cpp/header).
-
 
 ## Installation
 
@@ -81,10 +78,12 @@ Depending on the compiler and C++ standard used, *scope lite* behaves less or mo
 
 ### Configuration
 
+#### Standard selection macro
+
 \-D<b>nssg\_CPLUSPLUS</b>=199711L  
 Define this macro to override the auto-detection of the supported C++ standard, if your compiler does not set the `__cplusplus` macro correctly.
 
-### Select standard library version or *scope lite*
+#### Select standard library version or *scope lite*
 
 At default, *scope lite* uses the standard library's version if it is available and lets you use it via namespace `nonstd`. You can however override this default and explicitly request to use the standard's version or *scope lite*'s header via the following macros.
 
