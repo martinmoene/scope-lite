@@ -72,8 +72,8 @@ $ g++ -std=c++11 -Wall -I../include -o 01-basic 01-basic.cpp && ./01-basic || ec
 
 **Contents**  
 
-[Documentation of C++ standard libraries extensions, version 3](#documentation-of-C-standard-libraries-extensions-version-3)
-[Configuration](#configuration)  
+- [Documentation of C++ standard libraries extensions, version 3](#documentation-of-C-standard-libraries-extensions-version-3)
+- [Configuration](#configuration)
 
 ### Documentation of C++ standard libraries extensions, version 3
 
