@@ -110,7 +110,7 @@ TBD
 
 *Proposals*
 
-- [p0052 - Generic scope and RAII Wrapper for the Standard Library](wg21.link/p0052). Peter Sommerlad and Andrew L. Sandoval with contributions by Eric Niebler and Daniel Krügler
+- [p0052 - Generic scope and RAII Wrapper for the Standard Library](http://wg21.link/p0052). Peter Sommerlad and Andrew L. Sandoval with contributions by Eric Niebler and Daniel Krügler
 
 ## Appendix
 
