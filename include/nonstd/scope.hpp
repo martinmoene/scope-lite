@@ -1156,6 +1156,9 @@ scope_success make_scope_success( EF action )
 //         std::forward<R>( resource ), std::forward<D>( deleter ), !bool( resource == invalid ) );
 // }
 
+// declare something for using:
+void  make_unique_resource_checked();
+
 #endif // #if scope_USE_POST_CPP98_VERSION
 
 }} // namespace nonstd::scope
