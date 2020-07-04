@@ -84,6 +84,7 @@ namespace nonstd
     using std::make_scope_exit;
     using std::make_scope_fail;
     using std::make_scope_success;
+    using std::make_unique_resource_checked;
 }
 
 #else // scope_USES_STD_SCOPE
@@ -182,6 +183,8 @@ namespace nonstd
 #define scope_HAVE_NOEXCEPT               scope_CPP11_140
 #define scope_HAVE_DEFAULT_FUNCTION_TEMPLATE_ARG  scope_CPP11_120
 #define scope_HAVE_STATIC_ASSERT          scope_CPP11_90
+#define scope_HAVE_TRAILING_RETURN_TYPE   scope_CPP11_120
+#define scope_HAVE_VALUE_INITIALIZATION   scope_CPP11_120
 
 // Presence of C++14 language features:
 
@@ -202,6 +205,7 @@ namespace nonstd
 #define scope_HAVE_IS_MOVE_CONSTRUCTIBLE  scope_CPP11_110
 #define scope_HAVE_IS_NOTHROW_CONSTRUCTIBLE scope_CPP11_110
 #define scope_HAVE_IS_NOTHROW_MOVE_CONSTRUCTIBLE scope_CPP11_110
+#define scope_HAVE_IS_NOTHROW_ASSIGNABLE  scope_CPP11_110
 
 #define scope_HAVE_REMOVE_CV              scope_CPP11_90
 #define scope_HAVE_REMOVE_REFERENCE       scope_CPP11_90
@@ -275,9 +279,9 @@ namespace nonstd
 // Method enabling (return type):
 
 #if scope_HAVE( TYPE_TRAITS )
-# define scope_ENABLE_IF_R_(R, VA)  typename std::enable_if< (VA), R >::type
+# define scope_ENABLE_IF_R_(VA, R)  typename std::enable_if< (VA), R >::type
 #else
-# define scope_ENABLE_IF_R_(R, VA)  R
+# define scope_ENABLE_IF_R_(VA, R)  R
 #endif
 
 // Method enabling (funtion template argument):
@@ -358,6 +362,12 @@ typedef bool_constant< false > false_type;
     template< class T > struct is_nothrow_move_constructible : std11::true_type{};
 #endif
 
+#if scope_HAVE( IS_NOTHROW_ASSIGNABLE )
+    using std::is_nothrow_assignable;
+#else
+    template< class T, class U > struct is_nothrow_assignable : std11::true_type{};
+#endif
+
 #if scope_HAVE( IS_SAME )
     using std::is_same;
 #elif scope_HAVE( IS_SAME_TR1 )
@@ -385,6 +395,18 @@ typedef bool_constant< false > false_type;
     template< class T > struct reference_wrapper{ typedef T type; };
 #endif
 
+template <class T> struct is_reference      : false_type{};
+template <class T> struct is_reference<T&>  : true_type {};
+#if scope_CPP11_100
+template <class T> struct is_reference<T&&> : true_type {};
+#endif
+
+template<bool B, class T, class F>
+struct conditional { typedef T type; };
+
+template<class T, class F>
+struct conditional<false, T, F> { typedef F type; };
+
 } // namepsace std11
 
 // C++14 emulation:
@@ -396,12 +418,6 @@ namespace std14 {
 #else
     template< class T > struct decay{ typedef T type; };
 #endif
-
-template<bool B, class T, class F>
-struct conditional { typedef T type; };
-
-template<class T, class F>
-struct conditional<false, T, F> { typedef F type; };
 
 }
 
@@ -503,15 +519,6 @@ template< class EF>
 scope_success<decay_t<EF>>
 make_scope_success(EF&& exit_function) ;
 
-template<class R,class D>
-unique_resource<decay_t<R>, decay_t<D>>
-make_unique_resource( R&& r, D&& d)
-noexcept(is_nothrow_constructible_v<decay_t<R>, R> && is_nothrow_constructible_v<decay_t<D>, D>);
-
-template<class R,class D>
-unique_resource<R&, decay_t<D>>
-make_unique_resource( reference_wrapper<R> r, D&& d) noexcept(is_nothrow_constructible_v<decay_t<D>, D>);
-
 #endif // reference
 
 #if scope_USE_POST_CPP98_VERSION
@@ -536,6 +543,8 @@ T const & conditional_forward( T && t, std11::false_type )
 // struct to_argument_type<EF,Fn>
 // {
 // };
+
+// scope_exit:
 
 template< class EF >
 class scope_exit
@@ -594,6 +603,8 @@ private:
     bool execute_on_destruction; // { true };
 };
 
+// scope_fail:
+
 template< class EF >
 class scope_fail
 {
@@ -649,6 +660,8 @@ private:
     EF exit_function;
     int uncaught_on_creation; // { std17::uncaught_exceptions() };
 };
+
+// scope_success:
 
 template< class EF >
 class scope_success
@@ -712,92 +725,152 @@ template< class EF > scope_fail(EF) -> scope_fail<EF>;
 template< class EF > scope_success(EF) -> scope_success<EF>;
 #endif
 
+// unique_resource:
+
 template< class R, class D >
-class unique_resource {
+class unique_resource
+{
+private:
+    typedef typename std11::conditional<
+        std11::is_reference<R>::value
+        , typename std11::reference_wrapper< typename std11::remove_reference<R>::type >::type
+        , R
+    >::type R1;
+
 public:
-    unique_resource();
+    // This overload only participates in overload resolution if:
+    // - std::is_default_constructible_v<R>
+    // - && std::is_default_constructible_v<D>
 
-    template <class RR, class DD>
-    unique_resource(RR&& r, DD&& d) scope_noexcept_op(true/*see below*/);
+    unique_resource()
+#if scope_HAVE( VALUE_INITIALIZATION )
+    : resource{}
+    , deleter{}
+    , execute_on_reset{ false }
+#else
+    : resource()
+    , deleter()
+    , execute_on_reset( false )
+#endif
+    {}
 
-    unique_resource(unique_resource&& rhs) scope_noexcept_op(true/*see below*/);
-    ~unique_resource();
+    template< class RR, class DD
+        scope_ENABLE_IF_((
+            std11::is_constructible<R1, RR>::value
+            &&  std11::is_constructible<D , DD>::value
+            && (std11::is_nothrow_constructible<R1, RR>::value || std11::is_constructible<R1, RR&>::value )
+            &&  std11::is_nothrow_constructible<D, DD>::value  || std11::is_constructible<D, DD&>::value
+        ))
+    >
+    unique_resource( RR && r, DD && d, bool execute = true )
+        scope_noexcept_op((
+            ( std11::is_nothrow_constructible<R1, RR>::value || std11::is_nothrow_constructible<R1, RR&>::value )
+            && ( std11::is_nothrow_constructible<D, DD>::value || std11::is_nothrow_constructible<D, DD&>::value )
+        ))
+    : resource( conditional_forward<RR>( std::forward<RR>(r)
+            , std11::bool_constant< std11::is_nothrow_constructible<R1, RR>::value >() ) )
+    , deleter( ( conditional_forward<DD>( std::forward<DD>(d)
+            , std11::bool_constant< std11::is_nothrow_constructible<D, DD>::value >() ) ) )
+    , execute_on_reset( execute )
+    {}
 
-    unique_resource& operator=(unique_resource&& rhs) scope_noexcept_op(true/*see below*/);
+    // If initialization of the deleter throws an exception and std::is_nothrow_move_constructible_v<RS> is true and
+    // other owns the resource, calls the deleter of other with res_ to dispose the resource, then calls other.release().
 
-    void reset() scope_noexcept;
+    unique_resource( unique_resource && other )
+        scope_noexcept_op(
+            std11::is_nothrow_move_constructible<R1>::value && std11::is_nothrow_move_constructible<D>::value
+        )
+    : resource( std::move( other.resource ) )    // conditional_move() if std::is_nothrow_move_constructible_v<RS> is true
+    , deleter(  std::move( other.deleter  ) )    // conditional_move() if std::is_nothrow_move_constructible_v<D> is true
+    , execute_on_reset( other.execute_on_reset )
+    {
+        other.release();
+    }
 
-    template <class RR>
-    void reset(RR&& r);
+    ~unique_resource()
+    {
+        reset();
+    }
 
-    void release() scope_noexcept;
-    const R& get() const scope_noexcept;
+    unique_resource & operator=( unique_resource && other ) scope_noexcept_op(true/*see below*/)
+    {
+        other.release();
+    }
 
-    /*see below*/void operator*() const scope_noexcept;
-    R operator->() const scope_noexcept;
+    void reset() scope_noexcept
+    {
+        if ( execute_on_reset )
+        {
+            execute_on_reset = false;
+            get_deleter()( get() );
+        }
+    }
 
-    const D& get_deleter() const scope_noexcept;
+    template< class RR >
+    void reset( RR && r )
+    {
+        auto &&guard = make_scope_fail( [&, this]{ get_deleter()(r); } ); // -Wunused-variable on clang
+
+        reset();
+        resource = conditional_forward<RR>( std::forward<RR>(r)
+            , std11::bool_constant< std11::is_nothrow_assignable<R1, RR>::value >() );
+    }
+
+    void release() scope_noexcept
+    {
+        execute_on_reset = false;
+    }
+
+    const R & get() const scope_noexcept
+    {
+        return resource;
+    }
+
+#if scope_HAVE( TRAILING_RETURN_TYPE )
+    template< class RR=R >
+    auto operator*() const scope_noexcept ->
+        scope_ENABLE_IF_R_(
+            std::is_pointer<RR>::value && !std::is_void<typename std::remove_pointer<RR>::type>::value
+            , typename std::add_lvalue_reference<typename std::remove_pointer<R>::type>::type
+        )
+#else
+    typename std::add_lvalue_reference<typename std::remove_pointer<R>::type>::type
+    operator*() const scope_noexcept
+#endif
+    {
+        return *get();
+    }
+
+#if scope_HAVE( TRAILING_RETURN_TYPE )
+    template< class RR=R >
+    auto operator->() const scope_noexcept -> scope_ENABLE_IF_R_( std::is_pointer<RR>::value, R )
+#else
+    R operator->() const scope_noexcept
+#endif
+    {
+        return get();
+    }
+
+    D const & get_deleter() const scope_noexcept
+    {
+        return deleter;
+    }
+
+scope_is_delete_access:
+	unique_resource & operator=( unique_resource const & ) scope_is_delete;
+	unique_resource( unique_resource const & ) scope_is_delete;
 
 private:
-//    using R1 = conditional_t< is_reference_v<R>, reference_wrapper<remove_reference_t<R>>, R >; // exposition only
-//    R1 resource; // exposition only
-//    D deleter; // exposition only
-//    bool execute_on_reset{true}; // exposition only
+    R1 resource;
+    D deleter;
+    bool execute_on_reset;
 };
 
 #if scope_HAVE( DEDUCTION_GUIDES )
 template< typename R, typename D >
 unique_resource(R, D) -> unique_resource<R, D>;
 #endif
-
-// special factory function:
-
-#if scope_HAVE_DEFAULT_FUNCTION_TEMPLATE_ARG
-
-template< class R, class D, class S=R >
-unique_resource
-<
-    typename std14::decay<R>::type
-    , typename std14::decay<D>::type
->
-make_unique_resource_checked( R && r, S const & invalid, D && d )
-scope_noexcept_op
-((
-    std11::is_nothrow_constructible<typename std14::decay<R>::type, R>::value
-    && std11::is_nothrow_constructible<typename std14::decay<D>::type, D>::value
-));
-
-#else // scope_HAVE_DEFAULT_FUNCTION_TEMPLATE_ARG
-
-// avoid default template arguments:
-
-template< class R, class D >
-unique_resource
-<
-    typename std14::decay<R>::type
-    , typename std14::decay<D>::type
->
-make_unique_resource_checked( R && r, R const & invalid, D && d )
-scope_noexcept_op
-((
-    std11::is_nothrow_constructible<typename std14::decay<R>::type, R>::value
-    && std11::is_nothrow_constructible<typename std14::decay<D>::type, D>::value
-));
-
-template< class R, class D, class S >
-unique_resource
-<
-    typename std14::decay<R>::type
-    , typename std14::decay<D>::type
->
-make_unique_resource_checked( R && r, S const & invalid, D && d )
-scope_noexcept_op
-((
-    std11::is_nothrow_constructible<typename std14::decay<R>::type, R>::value
-    && std11::is_nothrow_constructible<typename std14::decay<D>::type, D>::value
-));
-
-#endif // scope_HAVE_DEFAULT_FUNCTION_TEMPLATE_ARG
 
 // optional factory functions (should at least be present for LFTS3):
 
@@ -822,19 +895,66 @@ make_scope_success( EF && exit_function )
     return scope_success<typename std14::decay<EF>::type>( std::forward<EF>( exit_function ) );
 }
 
-template< class R, class D >
-unique_resource<typename std14::decay<R>::type, typename std14::decay<D>::type>
-make_unique_resource( R && r, D && d )
+// special factory function make_unique_resource_checked():
+
+#if scope_HAVE_DEFAULT_FUNCTION_TEMPLATE_ARG
+
+template< class R, class D, class S = typename std14::decay<R>::type >
+unique_resource
+<
+    typename std14::decay<R>::type
+    , typename std14::decay<D>::type
+>
+make_unique_resource_checked( R && resource, S const & invalid, D && deleter )
 scope_noexcept_op
 ((
     std11::is_nothrow_constructible<typename std14::decay<R>::type, R>::value
     && std11::is_nothrow_constructible<typename std14::decay<D>::type, D>::value
-));
+))
+{
+    return unique_resource<typename std14::decay<R>::type, typename std14::decay<D>::type>(
+        std::forward<R>( resource ), std::forward<D>( deleter ), !bool( resource == invalid ) );
+}
+
+#else // scope_HAVE_DEFAULT_FUNCTION_TEMPLATE_ARG
+
+// avoid default template arguments:
 
 template< class R, class D >
-unique_resource< R &, typename std14::decay<D>::type >
-make_unique_resource( typename std11::reference_wrapper<R>::type r, D && d )
-scope_noexcept_op(( std11::is_nothrow_constructible<typename std14::decay<D>::type, D>::value ));
+unique_resource
+<
+    typename std14::decay<R>::type
+    , typename std14::decay<D>::type
+>
+make_unique_resource_checked( R && resource, R const & invalid, D && deleter )
+scope_noexcept_op
+((
+    std11::is_nothrow_constructible<typename std14::decay<R>::type, R>::value
+    && std11::is_nothrow_constructible<typename std14::decay<D>::type, D>::value
+))
+{
+    return unique_resource<typename std14::decay<R>::type, typename std14::decay<D>::type>(
+        std::forward<R>( resource ), std::forward<D>( deleter ), !bool( resource == invalid ) );
+}
+
+template< class R, class D, class S >
+unique_resource
+<
+    typename std14::decay<R>::type
+    , typename std14::decay<D>::type
+>
+make_unique_resource_checked( R && resource, S const & invalid, D && deleter )
+scope_noexcept_op
+((
+    std11::is_nothrow_constructible<typename std14::decay<R>::type, R>::value
+    && std11::is_nothrow_constructible<typename std14::decay<D>::type, D>::value
+))
+{
+    return unique_resource<typename std14::decay<R>::type, typename std14::decay<D>::type>(
+        std::forward<R>( resource ), std::forward<D>( deleter ), !bool( resource == invalid ) );
+}
+
+#endif // scope_HAVE_DEFAULT_FUNCTION_TEMPLATE_ARG
 
 #else // #if scope_USE_POST_CPP98_VERSION
 
@@ -1024,10 +1144,16 @@ scope_success make_scope_success( EF action )
     return scope_success( action );
 }
 
-// template< class R, class D >
-// unique_resource<R,D> make_scope_unique_resource( EF action )
+// template< class R, class D, class S = typename std14::decay<R>::type >
+// unique_resource
+// <
+//     typename std14::decay<R>::type
+//     , typename std14::decay<D>::type
+// >
+// make_unique_resource_checked( R && resource, S const & invalid, D && deleter )
 // {
-//     return ...
+//     return unique_resource<typename std14::decay<R>::type, typename std14::decay<D>::type>(
+//         std::forward<R>( resource ), std::forward<D>( deleter ), !bool( resource == invalid ) );
 // }
 
 #endif // #if scope_USE_POST_CPP98_VERSION
@@ -1048,6 +1174,7 @@ namespace nonstd
     using scope::make_scope_exit;
     using scope::make_scope_fail;
     using scope::make_scope_success;
+    using scope::make_unique_resource_checked;
 }
 
 #endif // scope_USES_STD_SCOPE
