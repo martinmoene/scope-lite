@@ -133,4 +133,14 @@ scope_fail: exit function is not called when released
 scope_success: exit function is called when no exception occurs
 scope_success: exit function is not called when an exception occurs
 scope_success: exit function is not called when released
+unique_resource: a successfully acquired resource is deleted
+unique_resource: an unsuccessfully acquired resource is not deleted
+unique_resource: op=() replaces the managed resouce and the deleter with the give one's
+unique_resource: reset() executes deleter
+unique_resource: reset(resource) deletes original resource and replaces it with the given one
+unique_resource: release() releases the ownership and prevents execution of deleter
+unique_resource: get() provides the underlying resource handle
+unique_resource: get_deleter() accesses the deleter used for disposing of the managed resource
+unique_resource: op*() accesses the pointee if the resource handle is a pointer
+unique_resource: op->() accesses the pointee if the resource handle is a pointer
 ```

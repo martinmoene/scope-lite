@@ -330,6 +330,12 @@ template <class T> struct is_reference<T&>  : true_type {};
 template <class T> struct is_reference<T&&> : true_type {};
 #endif
 
+template< class T > struct remove_pointer                    { typedef T type; };
+template< class T > struct remove_pointer<T*>                { typedef T type; };
+template< class T > struct remove_pointer<T* const>          { typedef T type; };
+template< class T > struct remove_pointer<T* volatile>       { typedef T type; };
+template< class T > struct remove_pointer<T* const volatile> { typedef T type; };
+
 template<bool B, class T, class F>
 struct conditional { typedef T type; };
 
@@ -443,7 +449,23 @@ struct conditional<false, T, F> { typedef F type; };
 
 namespace std14 {
 
+#if scope_CPP11_100
+#if scope_HAVE( DEFAULT_FUNCTION_TEMPLATE_ARG )
+template< class T, class U = T >
+#else
+template< class T, class U /*= T*/ >
+#endif
+scope_constexpr14 T exchange( T & obj, U && new_value )
+{
+    T old_value = std::move( obj );
+    obj = std::forward<U>( new_value );
+    return old_value;
 }
+#else
+// C++98 version?
+#endif
+
+} // namespace std14
 
 // C++17 emulation (uncaught_exceptions):
 
@@ -810,7 +832,7 @@ public:
         ))
 #endif
     >
-    unique_resource( RR && r, DD && d, bool execute =true )
+    unique_resource( RR && r, DD && d, bool execute = true )
         scope_noexcept_op((
             ( std11::is_nothrow_constructible<R1, RR>::value || std11::is_nothrow_constructible<R1, RR&>::value )
             && ( std11::is_nothrow_constructible<D, DD>::value || std11::is_nothrow_constructible<D, DD&>::value )
@@ -822,8 +844,20 @@ public:
         , execute_on_reset( execute )
     {}
 
-    // TODO: If initialization of the deleter throws an exception and std::is_nothrow_move_constructible_v<RS> is true and
+    // TODO:Move constructor.
+    // The stored resource handle is initialized from the one of other, using std::move if
+    // std::is_nothrow_move_constructible_v<RS> is true.
+
+    // If initialization of the stored resource handle throws an exception, other is not modified.
+
+    // Then, the deleter is initialized with the one of other, using std::move if
+    // std::is_nothrow_move_constructible_v<D> is true.
+
+    // If initialization of the deleter throws an exception and std::is_nothrow_move_constructible_v<RS> is true and
     // other owns the resource, calls the deleter of other with res_ to dispose the resource, then calls other.release().
+
+    // After construction, the constructed unique_resource owns its resource if and only if other owned the resource before
+    // the construction, and other is set to not own the resource.
 
     unique_resource( unique_resource && other )
         scope_noexcept_op(
@@ -831,7 +865,7 @@ public:
         )
         : resource( std::move( other.resource ) )    // conditional_move() if std::is_nothrow_move_constructible_v<RS> is true
         , deleter(  std::move( other.deleter  ) )    // conditional_move() if std::is_nothrow_move_constructible_v<D> is true
-        , execute_on_reset( other.execute_on_reset )
+        , execute_on_reset( std14::exchange( other.execute_on_reset, false ) )
     {
         other.release();
     }
@@ -841,7 +875,7 @@ public:
         reset();
     }
 
-    // TODO: implement operator=(unique_resource && other)
+    // TODO: operator=(unique_resource && other)
 
     unique_resource & operator=( unique_resource && other )
         scope_noexcept_op(
@@ -856,8 +890,6 @@ public:
         scope_static_assert(
             std11::is_nothrow_move_assignable<D>::value || std11::is_copy_assignable<D>::value
             , "The deleter must be nothrow-move assignable, or copy assignable");
-
-        other.reset();
 
         // Then assigns the stored resource handle and the deleter with other's. std::move is applied to the stored resource handle
         // or the deleter of other if std::is_nothrow_move_assignable_v<RS> or std::is_nothrow_move_assignable_v<D> is true respectively.
@@ -875,6 +907,15 @@ public:
         // otherwise D shall satisfy the CopyAssignable requirements.
 
         // Failing to satisfy above requirements results in undefined behavior.
+
+        if ( &other != this )
+        {
+            other.reset();
+
+            // ...
+        }
+
+        return *this;
     }
 
     void reset() scope_noexcept
@@ -888,20 +929,35 @@ public:
 
     template< class RR >
     void reset( RR && r )
+#if scope_CPP11_110
     {
-        auto &&guard = make_scope_fail( [&, this]{ get_deleter()(r); } ); // -Wunused-variable on clang
+        auto && guard = make_scope_fail( [&, this]{ get_deleter()(r); } ); // -Wunused-variable on clang
 
         reset();
         resource = conditional_forward<RR>( std::forward<RR>(r)
             , std11::bool_constant< std11::is_nothrow_assignable<R1, RR>::value >() );
+        execute_on_reset = true;
     }
+#else // scope_CPP11_110
+    try
+    {
+        reset();
+        resource = conditional_forward<RR>( std::forward<RR>(r)
+            , std11::bool_constant< std11::is_nothrow_assignable<R1, RR>::value >() );
+        execute_on_reset = true;
+    }
+    catch(...)
+    {
+        get_deleter()(r);
+    }
+#endif // scope_CPP11_110
 
     void release() scope_noexcept
     {
         execute_on_reset = false;
     }
 
-    const R & get() const scope_noexcept
+    R1 const & get() const scope_noexcept
     {
         return resource;
     }
@@ -914,7 +970,7 @@ public:
             , typename std::add_lvalue_reference<typename std::remove_pointer<R>::type>::type
         )
 #else
-    typename std::add_lvalue_reference<typename std::remove_pointer<R>::type>::type
+    typename std::add_lvalue_reference<typename std::remove_pointer<R1>::type>::type
     operator*() const scope_noexcept
 #endif
     {
@@ -925,7 +981,7 @@ public:
     template< class RR=R >
     auto operator->() const scope_noexcept -> scope_ENABLE_IF_R_( std::is_pointer<RR>::value, R )
 #else
-    R operator->() const scope_noexcept
+    R1 operator->() const scope_noexcept
 #endif
     {
         return get();
@@ -1243,7 +1299,8 @@ public:
         return resource;
     }
 
-    R & operator*() const
+    typename std11::remove_pointer<R>::type &
+    operator*() const
     {
         return *get();
     }
@@ -1259,11 +1316,11 @@ public:
     }
 
 private:
-//    using R1 = conditional_t< is_reference_v<R>, reference_wrapper<remove_reference_t<R>>, R >; // exposition only
-   typedef R R1;
-   R1 resource;
-   D deleter;
-   mutable bool execute_on_reset;
+    // using R1 = conditional_t< is_reference_v<R>, reference_wrapper<remove_reference_t<R>>, R >; // exposition only
+    // typedef R R1;
+    R resource;
+    D deleter;
+    mutable bool execute_on_reset;
 };
 
 template< class EF >

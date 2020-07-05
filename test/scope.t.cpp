@@ -11,8 +11,13 @@
 #include <functional>
 #include <iostream>
 
-using namespace nonstd;
+#if scope_CPP11_110
+# define Amp(expr) (expr)
+#else
+# define Amp(expr) &(expr)
+#endif
 
+using namespace nonstd;
 
 static bool is_called = false;
 
@@ -216,24 +221,57 @@ CASE( "scope_success: exit function is not called when released" )
     EXPECT_NOT( is_called );
 }
 
+// resource type to test unique_resource:
+
 struct Resource
 {
-    static int& state()
+    enum { N = 10 };
+    enum { free = 'f', acquired = 'a', closed = 'c', failed = 'x' };
+
+    static size_t invalid()
     {
-        static int state_ = 0;
+        return size_t(0);
+    }
+
+    static std::string& state()
+    {
+        static std::string state_( N, free );
         return state_;
     }
 
-    static int open ( bool success )
+    static size_t & current()
     {
-        std::cout << "Resource open: " << (success?"success: ":"failure: [no close]\n");
-        return state() = success ? 7 : 0;
+        static size_t index_ = 0;
+        return index_;
     }
 
-    static void close( int )
+    static size_t next()
     {
-        state() = 42;
-        std::cout << "close, state():" << state() << "\n";
+        return ++current();
+    }
+
+    static size_t open ( bool success )
+    {
+        std::cout << "Resource open: " << (success ? "success: ":"failure: [no close]\n");
+        const size_t i = next();
+        state()[i] = success ? acquired : failed;
+        return success ? i : invalid();
+    }
+
+    static void close( size_t i )
+    {
+        state()[i] = closed;
+        std::cout << "close, state(): '" << state()[i] << "'\n";
+    }
+
+    static bool is_acquired( size_t index = current() )
+    {
+        return state()[index] == acquired;
+    }
+
+    static bool is_deleted( size_t index = current() )
+    {
+        return state()[index] == closed;
     }
 };
 
@@ -242,17 +280,18 @@ CASE( "unique_resource: a successfully acquired resource is deleted" )
     // scope:
     {
 #if scope_USE_POST_CPP98_VERSION
-    auto checked_resource = make_unique_resource_checked(
-        Resource::open( true ), 0, &Resource::close
-    );
+        auto cr = make_unique_resource_checked(
+            Resource::open( true ), Resource::invalid(), Amp(Resource::close)
+        );
 #else
-    unique_resource<int, void(*)(int)> checked_resource = make_unique_resource_checked(
-        Resource::open( true ), 0, &Resource::close // note & (necessary decay is not available)
-    );
+        unique_resource<size_t, void(*)(size_t)> cr = make_unique_resource_checked(
+            Resource::open( true ), Resource::invalid(), Amp(Resource::close)
+        );
 #endif
+        EXPECT( Resource::is_acquired() );
     }
 
-    EXPECT( Resource::state() == 42 );
+    EXPECT( Resource::is_deleted() );
 }
 
 CASE( "unique_resource: an unsuccessfully acquired resource is not deleted" )
@@ -260,47 +299,162 @@ CASE( "unique_resource: an unsuccessfully acquired resource is not deleted" )
     // scope:
     {
 #if scope_USE_POST_CPP98_VERSION
-    auto checked_resource = make_unique_resource_checked(
-        Resource::open( false ), 0, &Resource::close
-    );
+        auto cr = make_unique_resource_checked(
+            Resource::open( false ), Resource::invalid(), Amp(Resource::close)
+        );
 #else
-    unique_resource<int, void(*)(int)> checked_resource = make_unique_resource_checked(
-        Resource::open( false ), 0, &Resource::close // note & (necessary decay is not available)
-    );
+        unique_resource<size_t, void(*)(size_t)> cr = make_unique_resource_checked(
+            Resource::open( false ), Resource::invalid(), Amp(Resource::close)
+        );
 #endif
+        EXPECT_NOT( Resource::is_acquired() );
     }
 
-    EXPECT( Resource::state() == 0 );
+    EXPECT_NOT( Resource::is_deleted() );
 }
 
-CASE( "unique_resource: assign" )
+CASE( "unique_resource: op=() replaces the managed resouce and the deleter with the give one's" ) // TODO:  op=()
 {
 }
 
-CASE( "unique_resource: reset()" )
+CASE( "unique_resource: reset() executes deleter" )
 {
+    // scope:
+    {
+#if scope_USE_POST_CPP98_VERSION
+        auto cr = make_unique_resource_checked(
+            Resource::open( true ), Resource::invalid(), Amp(Resource::close)
+        );
+#else
+        unique_resource<size_t, void(*)(size_t)> cr = make_unique_resource_checked(
+            Resource::open( true ), Resource::invalid(), Amp(Resource::close)
+        );
+#endif
+        cr.reset();
+
+        EXPECT( Resource::is_deleted() );
+    }
+
+    EXPECT( Resource::is_deleted() );
 }
 
-CASE( "unique_resource: reset(other)" )
+CASE( "unique_resource: reset(resource) deletes original resource and replaces it with the given one" )
 {
+    size_t r1;
+    size_t r2;
+
+    // scope:
+    {
+#if scope_USE_POST_CPP98_VERSION
+        auto cr1 = make_unique_resource_checked(
+            Resource::open( true ), Resource::invalid(), Amp(Resource::close)
+        );
+#else
+        unique_resource<size_t, void(*)(size_t)> cr1 = make_unique_resource_checked(
+            Resource::open( true ), Resource::invalid(), Amp(Resource::close)
+        );
+#endif
+        r1 = cr1.get();
+        r2 = Resource::open( true );
+
+        cr1.reset( r2 );
+
+        EXPECT    ( Resource::is_deleted( r1 ) );
+        EXPECT_NOT( Resource::is_deleted( r2 ) );
+    }
+
+    EXPECT( Resource::is_deleted( r2 ) );
 }
 
-CASE( "unique_resource: release()" )
+CASE( "unique_resource: release() releases the ownership and prevents execution of deleter" )
 {
+    // scope:
+    {
+#if scope_USE_POST_CPP98_VERSION
+        auto cr = make_unique_resource_checked(
+            Resource::open( true ), Resource::invalid(), Amp(Resource::close)
+        );
+#else
+        unique_resource<size_t, void(*)(size_t)> cr = make_unique_resource_checked(
+            Resource::open( true ), Resource::invalid(), Amp(Resource::close)
+        );
+#endif
+        cr.release();
+
+        EXPECT_NOT( Resource::is_deleted() );
+    }
+
+    EXPECT_NOT( Resource::is_deleted() );
 }
 
-CASE( "unique_resource: get()" )
+CASE( "unique_resource: get() provides the underlying resource handle" )
 {
+    size_t r = Resource::open( true );
+
+#if scope_USE_POST_CPP98_VERSION
+        auto cr = make_unique_resource_checked(
+            r, Resource::invalid(), Amp(Resource::close)
+        );
+#else
+        unique_resource<size_t, void(*)(size_t)> cr = make_unique_resource_checked(
+            r, Resource::invalid(), Amp(Resource::close)
+        );
+#endif
+
+    EXPECT( cr.get() == r );
 }
 
-CASE( "unique_resource: op*()" )
+CASE( "unique_resource: get_deleter() accesses the deleter used for disposing of the managed resource" )
 {
+#if scope_USE_POST_CPP98_VERSION
+        auto cr = make_unique_resource_checked(
+            Resource::open( true ), Resource::invalid(), Amp(Resource::close)
+        );
+#else
+        unique_resource<size_t, void(*)(size_t)> cr = make_unique_resource_checked(
+            Resource::open( true ), Resource::invalid(), Amp(Resource::close)
+        );
+#endif
+
+    // note: lest does not support op=( T f(...), T f(...) ):
+
+    EXPECT(( cr.get_deleter() == Amp(Resource::close) ));
 }
 
-CASE( "unique_resource: op->()" )
+CASE( "unique_resource: op*() accesses the pointee if the resource handle is a pointer" )
 {
+    struct no { static void op( int const * ){} };
+
+    int i = 77;
+
+#if scope_USE_POST_CPP98_VERSION
+        auto cr = make_unique_resource_checked(
+            &i, nullptr, Amp(no::op)
+        );
+#else
+        unique_resource<int *, void(*)(int const *)> cr = make_unique_resource_checked(
+            &i, (int *)0, Amp(no::op)
+        );
+#endif
+
+    EXPECT( *cr == 77 );
 }
 
-CASE( "unique_resource: get_deleter()" )
+struct S { int i; } s = { 77 };
+
+CASE( "unique_resource: op->() accesses the pointee if the resource handle is a pointer " )
 {
+    struct no { static void op( S const * ){} };
+
+#if scope_USE_POST_CPP98_VERSION
+        auto cr = make_unique_resource_checked(
+            &s, nullptr, Amp(no::op)
+        );
+#else
+        unique_resource<S *, void(*)(S const *)> cr = make_unique_resource_checked(
+            &s, (S *)0, Amp(no::op)
+        );
+#endif
+
+    EXPECT( cr->i == 77 );
 }
