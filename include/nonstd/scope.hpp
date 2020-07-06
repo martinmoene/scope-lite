@@ -401,7 +401,7 @@ struct conditional<false, T, F> { typedef F type; };
 #if scope_HAVE( IS_COPY_ASSIGNABLE )
     using std::is_copy_assignable;
 #else
-    template< class T, class U > struct is_copy_assignable : std11::true_type{};
+    template< class T > struct is_copy_assignable : std11::true_type{};
 #endif
 
 #if scope_HAVE( IS_NOTHROW_ASSIGNABLE )
@@ -413,7 +413,7 @@ struct conditional<false, T, F> { typedef F type; };
 #if scope_HAVE( IS_NOTHROW_MOVE_ASSIGNABLE )
     using std::is_nothrow_move_assignable;
 #else
-    template< class T, class U > struct is_nothrow_move_assignable : std11::true_type{};
+    template< class T > struct is_nothrow_move_assignable : std11::true_type{};
 #endif
 
 #if scope_HAVE( IS_SAME )
@@ -986,7 +986,9 @@ public:
         return resource;
     }
 
-#if scope_HAVE( TRAILING_RETURN_TYPE )
+    // VC120 produces ICE:
+
+#if scope_HAVE( TRAILING_RETURN_TYPE ) && !scope_BETWEEN( scope_COMPILER_MSVC_VERSION, 120, 130 )
     template< class RR=R >
     auto operator*() const scope_noexcept ->
         scope_ENABLE_IF_R_(
@@ -994,18 +996,20 @@ public:
             , typename std::add_lvalue_reference<typename std::remove_pointer<R>::type>::type
         )
 #else
-    typename std::add_lvalue_reference<typename std::remove_pointer<R1>::type>::type
+    typename std::add_lvalue_reference<typename std::remove_pointer<R>::type>::type
     operator*() const scope_noexcept
 #endif
     {
         return *get();
     }
 
-#if scope_HAVE( TRAILING_RETURN_TYPE )
+    // VC120 produces ICE:
+
+#if scope_HAVE( TRAILING_RETURN_TYPE ) && !scope_BETWEEN( scope_COMPILER_MSVC_VERSION, 120, 130 )
     template< class RR=R >
     auto operator->() const scope_noexcept -> scope_ENABLE_IF_R_( std::is_pointer<RR>::value, R )
 #else
-    R1 operator->() const scope_noexcept
+    R operator->() const scope_noexcept
 #endif
     {
         return get();
