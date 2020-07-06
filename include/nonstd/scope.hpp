@@ -526,7 +526,6 @@ struct type_identity { typedef T type; };
 
 } // namepsace std20
 
-
 //
 // For reference:
 //
@@ -772,6 +771,29 @@ template< class EF > scope_fail(EF) -> scope_fail<EF>;
 template< class EF > scope_success(EF) -> scope_success<EF>;
 #endif
 
+// optional factory functions (should at least be present for LFTS3):
+
+template< class EF >
+scope_exit<typename std11::decay<EF>::type>
+make_scope_exit( EF && exit_function )
+{
+    return scope_exit<typename std11::decay<EF>::type>( std::forward<EF>( exit_function ) );
+}
+
+template< class EF >
+scope_fail<typename std11::decay<EF>::type>
+make_scope_fail( EF && exit_function )
+{
+    return scope_fail<typename std11::decay<EF>::type>( std::forward<EF>( exit_function ) );
+}
+
+template< class EF >
+scope_success<typename std11::decay<EF>::type>
+make_scope_success( EF && exit_function )
+{
+    return scope_success<typename std11::decay<EF>::type>( std::forward<EF>( exit_function ) );
+}
+
 // unique_resource:
 
 template< class R, class D >
@@ -910,9 +932,11 @@ public:
 
         if ( &other != this )
         {
-            other.reset();
-
-            // ...
+            reset();
+            resource = other.resource;
+            deleter = other.deleter;
+            execute_on_reset = other.execute_on_reset;
+            other.execute_on_reset = false; // other.release();
         }
 
         return *this;
@@ -1006,29 +1030,6 @@ private:
 template< typename R, typename D >
 unique_resource(R, D) -> unique_resource<R, D>;
 #endif
-
-// optional factory functions (should at least be present for LFTS3):
-
-template< class EF >
-scope_exit<typename std11::decay<EF>::type>
-make_scope_exit( EF && exit_function )
-{
-    return scope_exit<typename std11::decay<EF>::type>( std::forward<EF>( exit_function ) );
-}
-
-template< class EF >
-scope_fail<typename std11::decay<EF>::type>
-make_scope_fail( EF && exit_function )
-{
-    return scope_fail<typename std11::decay<EF>::type>( std::forward<EF>( exit_function ) );
-}
-
-template< class EF >
-scope_success<typename std11::decay<EF>::type>
-make_scope_success( EF && exit_function )
-{
-    return scope_success<typename std11::decay<EF>::type>( std::forward<EF>( exit_function ) );
-}
 
 // special factory function make_unique_resource_checked():
 
@@ -1262,9 +1263,13 @@ public:
 
     unique_resource & operator=( unique_resource const & other )
     {
+        reset();
         resource = other.resource;
         deleter = other.deleter;
+        execute_on_reset = other.execute_on_reset;
         other.execute_on_reset = false; // other.release();
+
+        return *this;
     }
 
     void reset()
