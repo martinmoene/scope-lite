@@ -313,8 +313,35 @@ CASE( "unique_resource: an unsuccessfully acquired resource is not deleted" )
     EXPECT_NOT( Resource::is_deleted() );
 }
 
-CASE( "unique_resource: op=() replaces the managed resouce and the deleter with the give one's" ) // TODO:  op=()
+CASE( "unique_resource: op=() replaces the managed resouce and the deleter with the give one's" )
 {
+    size_t r1;
+    size_t r2;
+
+    // scope:
+    {
+#if scope_USE_POST_CPP98_VERSION
+        auto cr1 = make_unique_resource_checked(
+            Resource::open( true ), Resource::invalid(), Amp(Resource::close)
+        );
+#else
+        unique_resource<size_t, void(*)(size_t)> cr1 = make_unique_resource_checked(
+            Resource::open( true ), Resource::invalid(), Amp(Resource::close)
+        );
+#endif
+        r1 = cr1.get();
+
+        cr1 = make_unique_resource_checked(
+            Resource::open( true ), Resource::invalid(), Amp(Resource::close)
+        );
+
+        r2 = cr1.get();
+
+        EXPECT    ( Resource::is_deleted( r1 ) );
+        EXPECT_NOT( Resource::is_deleted( r2 ) );
+    }
+
+    EXPECT( Resource::is_deleted( r2 ) );
 }
 
 CASE( "unique_resource: reset() executes deleter" )
@@ -404,7 +431,7 @@ CASE( "unique_resource: get() provides the underlying resource handle" )
     EXPECT( cr.get() == r );
 }
 
-CASE( "unique_resource: get_deleter() accesses the deleter used for disposing of the managed resource" )
+CASE( "unique_resource: get_deleter() provides the deleter used for disposing of the managed resource" )
 {
 #if scope_USE_POST_CPP98_VERSION
         auto cr = make_unique_resource_checked(
@@ -416,12 +443,12 @@ CASE( "unique_resource: get_deleter() accesses the deleter used for disposing of
         );
 #endif
 
-    // note: lest does not support op=( T f(...), T f(...) ):
+    // note: lest does not support op=( T (*)(...), T (*)(...) ):
 
     EXPECT(( cr.get_deleter() == Amp(Resource::close) ));
 }
 
-CASE( "unique_resource: op*() accesses the pointee if the resource handle is a pointer" )
+CASE( "unique_resource: op*() provides the pointee if the resource handle is a pointer" )
 {
     struct no { static void op( int const * ){} };
 
@@ -442,7 +469,7 @@ CASE( "unique_resource: op*() accesses the pointee if the resource handle is a p
 
 struct S { int i; } s = { 77 };
 
-CASE( "unique_resource: op->() accesses the pointee if the resource handle is a pointer " )
+CASE( "unique_resource: op->() provides the pointee if the resource handle is a pointer " )
 {
     struct no { static void op( S const * ){} };
 
