@@ -585,6 +585,18 @@ T const & conditional_forward( T && t, std11::false_type )
     return t;
 }
 
+template< typename T >
+T && conditional_move( T && t, std11::true_type )
+{
+    return std::move( t );
+}
+
+template< typename T >
+T const & conditional_move( T && t, std11::false_type )
+{
+    return t;
+}
+
 // template< typename FE, typename Fn >
 // struct to_argument_type<EF,Fn>
 // {
@@ -885,19 +897,24 @@ public:
         scope_noexcept_op(
             std11::is_nothrow_move_constructible<R1>::value && std11::is_nothrow_move_constructible<D>::value
         )
-        : resource( std::move( other.resource ) )    // conditional_move() if std::is_nothrow_move_constructible_v<RS> is true
-        , deleter(  std::move( other.deleter  ) )    // conditional_move() if std::is_nothrow_move_constructible_v<D> is true
+    try
+        : resource( conditional_move( std::move(other.resource), typename std11::bool_constant< std11::is_nothrow_move_assignable<R>::value >() ) )
+        , deleter(  conditional_move( std::move(other.deleter ), typename std11::bool_constant< std11::is_nothrow_move_constructible<D>::value >() ) )
         , execute_on_reset( std14::exchange( other.execute_on_reset, false ) )
+    {}
+    catch(...)
     {
-        other.release();
+        if ( other.execute_on_reset && std::is_nothrow_move_constructible<R>::value )
+        {
+            other.get_deleter()(get());
+            other.release();
+        }
     }
 
     ~unique_resource()
     {
         reset();
     }
-
-    // TODO: operator=(unique_resource && other)
 
 private:
     // assign_rd( r, is_nothrow_move_assignable_v<R>, is_nothrow_move_assignable_v<D> ):
