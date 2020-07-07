@@ -280,13 +280,21 @@ CASE( "unique_resource: a successfully acquired resource is deleted" )
     // scope:
     {
 #if scope_USE_POST_CPP98_VERSION
-        auto cr = make_unique_resource_checked(
+# if !scope_BETWEEN(scope_COMPILER_MSVC_VERSION, 100, 120)
+        // Use value initialization once here, direct initialization furtheron:
+
+        auto cr{ make_unique_resource_checked(
             Resource::open( true ), Resource::invalid(), Amp(Resource::close)
-        );
+        )};
+# else
+        auto cr( make_unique_resource_checked(
+            Resource::open( true ), Resource::invalid(), Amp(Resource::close)
+        ));
+# endif
 #else
-        unique_resource<size_t, void(*)(size_t)> cr = make_unique_resource_checked(
+        unique_resource<size_t, void(*)(size_t)> cr( make_unique_resource_checked(
             Resource::open( true ), Resource::invalid(), Amp(Resource::close)
-        );
+        ));
 #endif
         EXPECT( Resource::is_acquired() );
     }
@@ -299,13 +307,13 @@ CASE( "unique_resource: an unsuccessfully acquired resource is not deleted" )
     // scope:
     {
 #if scope_USE_POST_CPP98_VERSION
-        auto cr = make_unique_resource_checked(
+        auto cr( make_unique_resource_checked(
             Resource::open( false ), Resource::invalid(), Amp(Resource::close)
-        );
+        ));
 #else
-        unique_resource<size_t, void(*)(size_t)> cr = make_unique_resource_checked(
+        unique_resource<size_t, void(*)(size_t)> cr( make_unique_resource_checked(
             Resource::open( false ), Resource::invalid(), Amp(Resource::close)
-        );
+        ));
 #endif
         EXPECT_NOT( Resource::is_acquired() );
     }
@@ -313,7 +321,7 @@ CASE( "unique_resource: an unsuccessfully acquired resource is not deleted" )
     EXPECT_NOT( Resource::is_deleted() );
 }
 
-CASE( "unique_resource: op=() replaces the managed resouce and the deleter with the give one's" )
+CASE( "unique_resource: op=() replaces the managed resouce and the deleter with the give one's" " [move-assignment]" )
 {
     size_t r1;
     size_t r2;
@@ -321,13 +329,13 @@ CASE( "unique_resource: op=() replaces the managed resouce and the deleter with 
     // scope:
     {
 #if scope_USE_POST_CPP98_VERSION
-        auto cr1 = make_unique_resource_checked(
+        auto cr1( make_unique_resource_checked(
             Resource::open( true ), Resource::invalid(), Amp(Resource::close)
-        );
+        ));
 #else
-        unique_resource<size_t, void(*)(size_t)> cr1 = make_unique_resource_checked(
+        unique_resource<size_t, void(*)(size_t)> cr1( make_unique_resource_checked(
             Resource::open( true ), Resource::invalid(), Amp(Resource::close)
-        );
+        ));
 #endif
         r1 = cr1.get();
 
@@ -349,13 +357,13 @@ CASE( "unique_resource: reset() executes deleter" )
     // scope:
     {
 #if scope_USE_POST_CPP98_VERSION
-        auto cr = make_unique_resource_checked(
+        auto cr( make_unique_resource_checked(
             Resource::open( true ), Resource::invalid(), Amp(Resource::close)
-        );
+        ));
 #else
-        unique_resource<size_t, void(*)(size_t)> cr = make_unique_resource_checked(
+        unique_resource<size_t, void(*)(size_t)> cr( make_unique_resource_checked(
             Resource::open( true ), Resource::invalid(), Amp(Resource::close)
-        );
+        ));
 #endif
         cr.reset();
 
@@ -373,13 +381,13 @@ CASE( "unique_resource: reset(resource) deletes original resource and replaces i
     // scope:
     {
 #if scope_USE_POST_CPP98_VERSION
-        auto cr1 = make_unique_resource_checked(
+        auto cr1( make_unique_resource_checked(
             Resource::open( true ), Resource::invalid(), Amp(Resource::close)
-        );
+        ));
 #else
-        unique_resource<size_t, void(*)(size_t)> cr1 = make_unique_resource_checked(
+        unique_resource<size_t, void(*)(size_t)> cr1( make_unique_resource_checked(
             Resource::open( true ), Resource::invalid(), Amp(Resource::close)
-        );
+        ));
 #endif
         r1 = cr1.get();
         r2 = Resource::open( true );
@@ -398,13 +406,13 @@ CASE( "unique_resource: release() releases the ownership and prevents execution 
     // scope:
     {
 #if scope_USE_POST_CPP98_VERSION
-        auto cr = make_unique_resource_checked(
+        auto cr( make_unique_resource_checked(
             Resource::open( true ), Resource::invalid(), Amp(Resource::close)
-        );
+        ));
 #else
-        unique_resource<size_t, void(*)(size_t)> cr = make_unique_resource_checked(
+        unique_resource<size_t, void(*)(size_t)> cr( make_unique_resource_checked(
             Resource::open( true ), Resource::invalid(), Amp(Resource::close)
-        );
+        ));
 #endif
         cr.release();
 
@@ -419,13 +427,13 @@ CASE( "unique_resource: get() provides the underlying resource handle" )
     size_t r = Resource::open( true );
 
 #if scope_USE_POST_CPP98_VERSION
-        auto cr = make_unique_resource_checked(
+        auto cr( make_unique_resource_checked(
             r, Resource::invalid(), Amp(Resource::close)
-        );
+        ));
 #else
-        unique_resource<size_t, void(*)(size_t)> cr = make_unique_resource_checked(
+        unique_resource<size_t, void(*)(size_t)> cr( make_unique_resource_checked(
             r, Resource::invalid(), Amp(Resource::close)
-        );
+        ));
 #endif
 
     EXPECT( cr.get() == r );
@@ -434,13 +442,13 @@ CASE( "unique_resource: get() provides the underlying resource handle" )
 CASE( "unique_resource: get_deleter() provides the deleter used for disposing of the managed resource" )
 {
 #if scope_USE_POST_CPP98_VERSION
-        auto cr = make_unique_resource_checked(
+        auto cr( make_unique_resource_checked(
             Resource::open( true ), Resource::invalid(), Amp(Resource::close)
-        );
+        ));
 #else
-        unique_resource<size_t, void(*)(size_t)> cr = make_unique_resource_checked(
+        unique_resource<size_t, void(*)(size_t)> cr( make_unique_resource_checked(
             Resource::open( true ), Resource::invalid(), Amp(Resource::close)
-        );
+        ));
 #endif
 
     // note: lest does not support op=( T (*)(...), T (*)(...) ):
@@ -455,13 +463,13 @@ CASE( "unique_resource: op*() provides the pointee if the resource handle is a p
     int i = 77;
 
 #if scope_USE_POST_CPP98_VERSION
-        auto cr = make_unique_resource_checked(
+        auto cr( make_unique_resource_checked(
             &i, nullptr, Amp(no::op)
-        );
+        ));
 #else
-        unique_resource<int *, void(*)(int const *)> cr = make_unique_resource_checked(
+        unique_resource<int *, void(*)(int const *)> cr( make_unique_resource_checked(
             &i, (int *)0, Amp(no::op)
-        );
+        ));
 #endif
 
     EXPECT( *cr == 77 );
@@ -474,14 +482,18 @@ CASE( "unique_resource: op->() provides the pointee if the resource handle is a 
     struct no { static void op( S const * ){} };
 
 #if scope_USE_POST_CPP98_VERSION
-        auto cr = make_unique_resource_checked(
+        auto cr( make_unique_resource_checked(
             &s, nullptr, Amp(no::op)
-        );
+        ));
 #else
-        unique_resource<S *, void(*)(S const *)> cr = make_unique_resource_checked(
+        unique_resource<S *, void(*)(S const *)> cr( make_unique_resource_checked(
             &s, (S *)0, Amp(no::op)
-        );
+        ));
 #endif
 
     EXPECT( cr->i == 77 );
+}
+
+CASE( "unique_resource: " "[move-construction][on-deleter-throws]")
+{
 }
