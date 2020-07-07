@@ -840,7 +840,7 @@ public:
     template< class RR, class DD
 #if scope_BETWEEN( scope_COMPILER_MSVC_VERSION, 120, 130 )
         scope_ENABLE_IF_(( true
-        //  && std11::is_constructible<R1, RR>::value
+        //  &&  std11::is_constructible<R1, RR>::value
             &&  std11::is_constructible<D , DD>::value
         //  && (std11::is_nothrow_constructible<R1, RR>::value || std11::is_constructible<R1, RR&>::value )
             &&  std11::is_nothrow_constructible<D, DD>::value  || std11::is_constructible<D, DD&>::value
@@ -899,6 +899,34 @@ public:
 
     // TODO: operator=(unique_resource && other)
 
+private:
+    // assign_rd( r, is_nothrow_move_assignable_v<R>, is_nothrow_move_assignable_v<D> ):
+
+    void assign_rd( unique_resource && other, std11::true_type, std11::true_type )
+    {
+        resource = std::move( other.resource );
+        deleter  = std::move( other.deleter );
+    }
+
+    void assign_rd( unique_resource && other, std11::true_type, std11::false_type )
+    {
+        resource = std::move( other.resource );
+        deleter  = other.deleter;
+    }
+
+    void assign_rd( unique_resource && other, std11::false_type, std11::true_type )
+    {
+        deleter  = std::move( other.deleter );
+        resource = other.resource;
+    }
+
+    void assign_rd( unique_resource && other, std11::false_type, std11::false_type )
+    {
+        resource = other.resource;
+        deleter  = other.deleter;
+    }
+
+public:
     unique_resource & operator=( unique_resource && other )
         scope_noexcept_op(
             std11::is_nothrow_move_assignable<R1>::value && std11::is_nothrow_move_assignable<D>::value
@@ -913,30 +941,15 @@ public:
             std11::is_nothrow_move_assignable<D>::value || std11::is_copy_assignable<D>::value
             , "The deleter must be nothrow-move assignable, or copy assignable");
 
-        // Then assigns the stored resource handle and the deleter with other's. std::move is applied to the stored resource handle
-        // or the deleter of other if std::is_nothrow_move_assignable_v<RS> or std::is_nothrow_move_assignable_v<D> is true respectively.
-
-        // Assignment of the stored resource handle is executed first,
-        // unless std::is_nothrow_move_assignable_v<D> is false and std::is_nothrow_move_assignable_v<RS> is true.
-
-        // Finally, sets *this to own the resource if and only if other owned it before assignment,
-        // and other not to own the resource.
-
-        // If std::is_nothrow_move_assignable_v<RS> is true, RS shall satisfy the MoveAssignable requirements;
-        // otherwise RS shall satisfy the CopyAssignable requirements.
-
-        // If std::is_nothrow_move_assignable_v<D> is true, D shall satisfy the MoveAssignable requirements;
-        // otherwise D shall satisfy the CopyAssignable requirements.
-
-        // Failing to satisfy above requirements results in undefined behavior.
-
         if ( &other != this )
         {
             reset();
-            resource = other.resource;
-            deleter = other.deleter;
-            execute_on_reset = other.execute_on_reset;
-            other.execute_on_reset = false; // other.release();
+            assign_rd(
+                std::move( other )
+                , typename std11::bool_constant< std11::is_nothrow_move_assignable<R>::value >()
+                , typename std11::bool_constant< std11::is_nothrow_move_assignable<D>::value >()
+            );
+            execute_on_reset = std14::exchange( other.execute_on_reset, false );
         }
 
         return *this;
@@ -986,7 +999,7 @@ public:
         return resource;
     }
 
-    // VC120 produces ICE:
+    // VC120/VS2013 produces ICE:
 
 #if scope_HAVE( TRAILING_RETURN_TYPE ) && !scope_BETWEEN( scope_COMPILER_MSVC_VERSION, 120, 130 )
     template< class RR=R >
@@ -1003,7 +1016,7 @@ public:
         return *get();
     }
 
-    // VC120 produces ICE:
+    // VC120/VS2013 produces ICE:
 
 #if scope_HAVE( TRAILING_RETURN_TYPE ) && !scope_BETWEEN( scope_COMPILER_MSVC_VERSION, 120, 130 )
     template< class RR=R >
