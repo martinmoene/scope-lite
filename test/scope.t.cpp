@@ -225,7 +225,7 @@ CASE( "scope_success: exit function is not called when released" )
 
 struct Resource
 {
-    enum { N = 10 };
+    enum { N = 20 };
     enum { free = 'f', acquired = 'a', closed = 'c', failed = 'x' };
 
     static size_t invalid()
