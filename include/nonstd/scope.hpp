@@ -307,6 +307,30 @@ namespace nonstd
 # define  scope_ENABLE_IF_(VA)
 #endif
 
+// Declare __cxa_get_globals or equivalent in global namespace for uncaught_exceptions():
+
+#if !scope_HAVE( UNCAUGHT_EXCEPTIONS )
+# if scope_COMPILER_MSVC_VERSION
+    extern "C" char * __cdecl _getptd();
+# elif scope_COMPILER_CLANG_VERSION || scope_COMPILER_GNUC_VERSION || scope_COMPILER_APPLECLANG_VERSION
+    // libc++:
+# if defined(__GLIBCXX__) || defined(__GLIBCPP__)
+    // <cxxabi.h> not included:
+# if !defined(__CXXABI_H)
+    namespace __cxxabiv1 {
+        struct __cxa_eh_globals;
+        extern "C" __cxa_eh_globals* __cxa_get_globals() scope_noexcept __attribute__ ((__const__));
+    }
+# endif
+    using ::__cxxabiv1::__cxa_get_globals;
+# else // libstdc++
+    extern "C" char * __cxa_get_globals() scope_noexcept;
+# endif
+# endif
+#endif // !scope_HAVE( UNCAUGHT_EXCEPTIONS )
+
+// Namespace nonstd:
+
 namespace nonstd {
 namespace scope {
 
@@ -490,7 +514,6 @@ inline int uncaught_exceptions() scope_noexcept
 
 #elif scope_COMPILER_MSVC_VERSION
 
-extern "C" char * __cdecl _getptd();
 inline int uncaught_exceptions() scope_noexcept
 {
     return to_int( *reinterpret_cast<unsigned*>(_getptd() + (sizeof(void*) == 8 ? 0x100 : 0x90) ) );
@@ -498,10 +521,10 @@ inline int uncaught_exceptions() scope_noexcept
 
 #elif scope_COMPILER_CLANG_VERSION || scope_COMPILER_GNUC_VERSION || scope_COMPILER_APPLECLANG_VERSION
 
-extern "C" char * __cxa_get_globals();
 inline int uncaught_exceptions() scope_noexcept
 {
-    return to_int( *reinterpret_cast<unsigned*>(__cxa_get_globals() + sizeof(void*) ) );
+    return to_int( *reinterpret_cast<const unsigned*>(
+        reinterpret_cast< const unsigned char* >(__cxa_get_globals()) + sizeof(void*) ) );
 }
 
 #endif // scope_HAVE( UNCAUGHT_EXCEPTIONS )
