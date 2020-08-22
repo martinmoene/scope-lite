@@ -307,7 +307,7 @@ namespace nonstd
 # define  scope_ENABLE_IF_(VA)
 #endif
 
-// Declare __cxa_get_globals or equivalent in global namespace for uncaught_exceptions():
+// Declare __cxa_get_globals() or equivalent in global namespace for uncaught_exceptions():
 
 #if !scope_HAVE( UNCAUGHT_EXCEPTIONS )
 # if scope_COMPILER_MSVC_VERSION
@@ -929,7 +929,7 @@ public:
     {
         if ( other.execute_on_reset && std::is_nothrow_move_constructible<R>::value )
         {
-            other.get_deleter()(get());
+            other.get_deleter()( this->get() );
             other.release();
         }
     }
@@ -1025,7 +1025,7 @@ public:
     }
     catch(...)
     {
-        get_deleter()(r);
+        this->get_deleter()(r);
     }
 #endif // scope_CPP11_110
 
@@ -1348,7 +1348,7 @@ public:
     }
     catch(...)
     {
-        get_deleter()( r );
+        this->get_deleter()( r );
     }
 
     void release()
