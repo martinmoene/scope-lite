@@ -307,20 +307,19 @@ namespace nonstd
 # define  scope_ENABLE_IF_(VA)
 #endif
 
-// Declare __cxa_get_globals() or equivalent in global namespace for uncaught_exceptions():
+// Declare __cxa_get_globals() or equivalent in namespace nonstd::scope for uncaught_exceptions():
 
 #if !scope_HAVE( UNCAUGHT_EXCEPTIONS )
-# if scope_COMPILER_MSVC_VERSION
-    extern "C" char * __cdecl _getptd();
+# if scope_COMPILER_MSVC_VERSION                                // libstl :)
+    namespace nonstd { namespace scope { extern "C" char * __cdecl _getptd(); }}
 # elif scope_COMPILER_CLANG_VERSION || scope_COMPILER_GNUC_VERSION || scope_COMPILER_APPLECLANG_VERSION
-# if defined(__GLIBCXX__) || defined(__GLIBCPP__)
-    // libstdc++:
+# if defined(__GLIBCXX__) || defined(__GLIBCPP__)               // libstdc++: prototype from cxxabi.h
 #   include  <cxxabi.h>
-    using ::__cxxabiv1::__cxa_get_globals;
-# else // libc++
-    extern "C" char * __cxa_get_globals() scope_noexcept;
+# elif !defined(BOOST_CORE_UNCAUGHT_EXCEPTIONS_HPP_INCLUDED_)   // libc++: prototype from Boost?
+    namespace __cxxabiv1 { struct __cxa_eh_globals; extern "C" __cxa_eh_globals * __cxa_get_globals() scope_noexcept; }
 # endif
-# endif
+    namespace nonstd { namespace scope { using ::__cxxabiv1::__cxa_get_globals; }}
+# endif // scope_COMPILER_MSVC_VERSION
 #endif // !scope_HAVE( UNCAUGHT_EXCEPTIONS )
 
 // Namespace nonstd:
