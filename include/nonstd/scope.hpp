@@ -313,15 +313,9 @@ namespace nonstd
 # if scope_COMPILER_MSVC_VERSION
     extern "C" char * __cdecl _getptd();
 # elif scope_COMPILER_CLANG_VERSION || scope_COMPILER_GNUC_VERSION || scope_COMPILER_APPLECLANG_VERSION
-    // libstdc++:
 # if defined(__GLIBCXX__) || defined(__GLIBCPP__)
-    // <cxxabi.h> not included:
-# if !defined(__CXXABI_H)
-    namespace __cxxabiv1 {
-        struct __cxa_eh_globals;
-        extern "C" __cxa_eh_globals* __cxa_get_globals() scope_noexcept __attribute__ ((__const__));
-    }
-# endif
+    // libstdc++:
+#   include  <cxxabi.h>
     using ::__cxxabiv1::__cxa_get_globals;
 # else // libc++
     extern "C" char * __cxa_get_globals() scope_noexcept;
