@@ -316,7 +316,11 @@ namespace nonstd
 # if defined(__GLIBCXX__) || defined(__GLIBCPP__)               // libstdc++: prototype from cxxabi.h
 #   include  <cxxabi.h>
 # elif !defined(BOOST_CORE_UNCAUGHT_EXCEPTIONS_HPP_INCLUDED_)   // libc++: prototype from Boost?
+# if defined(__OpenBSD__)
+    namespace __cxxabiv1 { struct __cxa_eh_globals; extern "C" __cxa_eh_globals * __cxa_get_globals(); }
+# else
     namespace __cxxabiv1 { struct __cxa_eh_globals; extern "C" __cxa_eh_globals * __cxa_get_globals() scope_noexcept; }
+# endif
 # endif
     namespace nonstd { namespace scope { using ::__cxxabiv1::__cxa_get_globals; }}
 # endif // scope_COMPILER_MSVC_VERSION
@@ -486,10 +490,6 @@ scope_constexpr14 T exchange( T & obj, U && new_value )
 
 // C++17 emulation (uncaught_exceptions):
 
-// Courtesy of https://github.com/gsl-lite/gsl-lite
-// Add uncaught_exceptions for pre-2017 MSVC, GCC and Clang
-// Return unsigned char to save stack space, uncaught_exceptions can only increase by 1 in a scope
-
 namespace std17 {
 
 template< typename T >
@@ -509,7 +509,7 @@ inline int uncaught_exceptions() scope_noexcept
 
 inline int uncaught_exceptions() scope_noexcept
 {
-    return to_int( *reinterpret_cast<unsigned*>(_getptd() + (sizeof(void*) == 8 ? 0x100 : 0x90) ) );
+    return to_int( *reinterpret_cast<const unsigned*>(_getptd() + (sizeof(void*) == 8 ? 0x100 : 0x90) ) );
 }
 
 #elif scope_COMPILER_CLANG_VERSION || scope_COMPILER_GNUC_VERSION || scope_COMPILER_APPLECLANG_VERSION
@@ -517,7 +517,7 @@ inline int uncaught_exceptions() scope_noexcept
 inline int uncaught_exceptions() scope_noexcept
 {
     return to_int( *reinterpret_cast<const unsigned*>(
-        reinterpret_cast< const unsigned char* >(__cxa_get_globals()) + sizeof(void*) ) );
+        reinterpret_cast<const unsigned char*>(__cxa_get_globals()) + sizeof(void*) ) );
 }
 
 #endif // scope_HAVE( UNCAUGHT_EXCEPTIONS )
