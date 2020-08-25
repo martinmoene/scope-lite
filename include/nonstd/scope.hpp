@@ -316,7 +316,7 @@ namespace nonstd
 # if defined(__GLIBCXX__) || defined(__GLIBCPP__)               // libstdc++: prototype from cxxabi.h
 #   include  <cxxabi.h>
 # elif !defined(BOOST_CORE_UNCAUGHT_EXCEPTIONS_HPP_INCLUDED_)   // libc++: prototype from Boost?
-# if defined(__OpenBSD__)
+# if defined(__FreeBSD__) || defined(__OpenBSD__)
     namespace __cxxabiv1 { struct __cxa_eh_globals; extern "C" __cxa_eh_globals * __cxa_get_globals(); }
 # else
     namespace __cxxabiv1 { struct __cxa_eh_globals; extern "C" __cxa_eh_globals * __cxa_get_globals() scope_noexcept; }
