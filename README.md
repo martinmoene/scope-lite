@@ -94,9 +94,10 @@ Define this to `scope_SCOPE_STD` to select standard's version. Define this to `s
 
 TBD
 
-## Building the tests
+<!-- ## Building the tests
 
 TBD
+-->
 
 ## Other implementations of scope
 
@@ -135,12 +136,15 @@ scope_success: exit function is not called when an exception occurs
 scope_success: exit function is not called when released
 unique_resource: a successfully acquired resource is deleted
 unique_resource: an unsuccessfully acquired resource is not deleted
-unique_resource: op=() replaces the managed resouce and the deleter with the give one's
+unique_resource: move construction moves the managed resource and the deleter from the give one's [move-construction]
+unique_resource: assignment replaces the managed resource and the deleter with the give one's [move-assignment]
 unique_resource: reset() executes deleter
 unique_resource: reset(resource) deletes original resource and replaces it with the given one
 unique_resource: release() releases the ownership and prevents execution of deleter
 unique_resource: get() provides the underlying resource handle
 unique_resource: get_deleter() provides the deleter used for disposing of the managed resource
 unique_resource: op*() provides the pointee if the resource handle is a pointer
-unique_resource: op->() provides the pointee if the resource handle is a pointer
+unique_resource: op->() provides the pointee if the resource handle is a pointer 
+unique_resource: [move-construction][resource-copy-ctor-throws]
+unique_resource: [move-construction][deleter-copy-ctor-throws]
 ```
