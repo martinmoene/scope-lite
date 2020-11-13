@@ -321,7 +321,44 @@ CASE( "unique_resource: an unsuccessfully acquired resource is not deleted" )
     EXPECT_NOT( Resource::is_deleted() );
 }
 
-CASE( "unique_resource: op=() replaces the managed resouce and the deleter with the give one's" " [move-assignment]" )
+CASE( "unique_resource: move construction moves the managed resource and the deleter from the give one's" " [move-construction]" )
+{
+    size_t r1;
+    size_t r2;
+
+    // scope:
+    {
+#if scope_USE_POST_CPP98_VERSION
+        auto cr1( make_unique_resource_checked(
+            Resource::open( true ), Resource::invalid(), Amp(Resource::close)
+        ));
+
+        auto cr2( std::move(cr1) );
+#else
+        unique_resource<size_t, void(*)(size_t)> cr1( make_unique_resource_checked(
+            Resource::open( true ), Resource::invalid(), Amp(Resource::close)
+        ));
+
+        unique_resource<size_t, void(*)(size_t)> cr2( cr1 );
+#endif
+        EXPECT_NOT( Resource::is_deleted( cr1.get() ) );
+        EXPECT_NOT( Resource::is_deleted( cr2.get() ) );
+
+        // moved-from cr1 must not delete resource on reset or on descruction:
+
+        cr1.reset();
+
+        EXPECT_NOT( Resource::is_deleted( cr1.get() ) );
+
+        r1 = cr1.get();
+        r2 = cr2.get();
+    }
+
+    EXPECT( Resource::is_deleted( r1 ) );
+    EXPECT( Resource::is_deleted( r2 ) );
+}
+
+CASE( "unique_resource: assignment replaces the managed resource and the deleter with the give one's" " [move-assignment]" )
 {
     size_t r1;
     size_t r2;
@@ -494,6 +531,85 @@ CASE( "unique_resource: op->() provides the pointee if the resource handle is a 
     EXPECT( cr->i == 77 );
 }
 
-CASE( "unique_resource: " "[move-construction][on-deleter-throws]")
+struct ThrowingResource
 {
+    ThrowingResource() {}
+    ThrowingResource( ThrowingResource const & ) { throw std::runtime_error("ThrowingResource"); }
+
+    static size_t invalid()
+    {
+        return size_t(0);
+    }
+
+    static size_t open()
+    {
+        return 7;
+    }
+};
+
+struct NonThrowingResource
+{
+    NonThrowingResource() {}
+    NonThrowingResource( NonThrowingResource const & ) {}
+
+    static size_t invalid()
+    {
+        return size_t(0);
+    }
+
+    static size_t open()
+    {
+        return 7;
+    }
+};
+
+struct ThrowingDeleter
+{
+    ThrowingDeleter() {}
+    ThrowingDeleter( NonThrowingResource const & ){ throw std::runtime_error("ThrowingDeleter"); }
+
+    static void close( size_t ) {}
+};
+
+struct NonThrowingDeleter
+{
+    NonThrowingDeleter() {}
+    NonThrowingDeleter( NonThrowingDeleter const & ){}
+
+    static void close( size_t ) {}
+};
+
+CASE( "unique_resource: " "[move-construction][resource-copy-ctor-throws]")
+{
+    // scope:
+    {
+#if scope_USE_POST_CPP98_VERSION
+        auto cr( make_unique_resource_checked(
+            ThrowingResource::open(), ThrowingResource::invalid(), Amp(NonThrowingDeleter::close)
+        ));
+#else
+        unique_resource<size_t, void(*)(size_t)> cr( make_unique_resource_checked(
+            ThrowingResource::open(), ThrowingResource::invalid(), Amp(NonThrowingDeleter::close)
+        ));
+#endif
+        EXPECT( cr.get() == 7u );
+    }
 }
+
+CASE( "unique_resource: " "[move-construction][deleter-copy-ctor-throws]")
+{
+    // scope:
+    {
+#if scope_USE_POST_CPP98_VERSION
+        auto cr( make_unique_resource_checked(
+            NonThrowingResource::open(), NonThrowingResource::invalid(), Amp(ThrowingDeleter::close)
+        ));
+#else
+        unique_resource<size_t, void(*)(size_t)> cr( make_unique_resource_checked(
+            NonThrowingResource::open(), NonThrowingResource::invalid(), Amp(ThrowingDeleter::close)
+        ));
+#endif
+        EXPECT( cr.get() == 7u );
+    }
+}
+
