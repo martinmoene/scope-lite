@@ -331,7 +331,7 @@ namespace nonstd
 namespace nonstd {
 namespace scope {
 
-// for bit_ENABLE_IF_():
+// for scope_ENABLE_IF_():
 
 /*enum*/ class enabler{};
 
