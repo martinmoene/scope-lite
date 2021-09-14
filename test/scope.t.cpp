@@ -51,7 +51,7 @@ CASE( "scope_exit: exit function is called at end of scope" )
 #if scope_USE_POST_CPP98_VERSION
         auto guard = make_scope_exit( on::exit );
 #else
-        scope_exit guard = make_scope_exit( on::exit );
+        scope_exit<> guard = make_scope_exit( on::exit );
 #endif
     }
 
@@ -83,7 +83,7 @@ CASE( "scope_exit: exit function is called when an exception occurs" )
 #if scope_USE_POST_CPP98_VERSION
         auto guard = make_scope_exit( on::exit );
 #else
-        scope_exit guard = make_scope_exit( on::exit );
+        scope_exit<> guard = make_scope_exit( on::exit );
 #endif
         throw std::exception();
     }
@@ -101,7 +101,7 @@ CASE( "scope_exit: exit function is not called at end of scope when released" )
 #if scope_USE_POST_CPP98_VERSION
         auto guard = make_scope_exit( on::exit );
 #else
-        scope_exit guard = make_scope_exit( on::exit );
+        scope_exit<> guard = make_scope_exit( on::exit );
 #endif
         guard.release();
     }
@@ -118,7 +118,7 @@ CASE( "scope_fail: exit function is called when an exception occurs" )
 #if scope_USE_POST_CPP98_VERSION
         auto guard = make_scope_fail( on::fail );
 #else
-        scope_fail guard = make_scope_fail( on::fail );
+        scope_fail<> guard = make_scope_fail( on::fail );
 #endif
         throw std::exception();
     }
@@ -136,7 +136,7 @@ CASE( "scope_fail: exit function is not called when no exception occurs" )
 #if scope_USE_POST_CPP98_VERSION
         auto guard = make_scope_fail( on::fail );
 #else
-        scope_fail guard = make_scope_fail( on::fail );
+        scope_fail<> guard = make_scope_fail( on::fail );
 #endif
         // throw std::exception();
     }
@@ -154,7 +154,7 @@ CASE( "scope_fail: exit function is not called when released" )
 #if scope_USE_POST_CPP98_VERSION
         auto guard = make_scope_fail( on::fail );
 #else
-        scope_fail guard = make_scope_fail( on::fail );
+        scope_fail<> guard = make_scope_fail( on::fail );
 #endif
         guard.release();
 
@@ -174,7 +174,7 @@ CASE( "scope_success: exit function is called when no exception occurs" )
 #if scope_USE_POST_CPP98_VERSION
         auto guard = make_scope_success( on::success );
 #else
-        scope_success guard = make_scope_success( on::success );
+        scope_success<> guard = make_scope_success( on::success );
 #endif
         // throw std::exception();
     }
@@ -192,7 +192,7 @@ CASE( "scope_success: exit function is not called when an exception occurs" )
 #if scope_USE_POST_CPP98_VERSION
         auto guard = make_scope_success( on::success );
 #else
-        scope_success guard = make_scope_success( on::success );
+        scope_success<> guard = make_scope_success( on::success );
 #endif
         throw std::exception();
     }
@@ -210,7 +210,7 @@ CASE( "scope_success: exit function is not called when released" )
 #if scope_USE_POST_CPP98_VERSION
         auto guard = make_scope_success( on::success );
 #else
-        scope_success guard = make_scope_success( on::success );
+        scope_success<> guard = make_scope_success( on::success );
 #endif
         guard.release();
 
