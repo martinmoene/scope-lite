@@ -27,6 +27,20 @@
 #define scope_SCOPE_NONSTD   1
 #define scope_SCOPE_STD      2
 
+// tweak header support:
+
+#ifdef __has_include
+# if __has_include(<nonstd/scope.tweak.hpp>)
+#  include <nonstd/scope.tweak.hpp>
+# endif
+#define scope_HAVE_TWEAK_HEADER  1
+#else
+#define scope_HAVE_TWEAK_HEADER  0
+//# pragma message("scope.hpp: Note: Tweak header not supported.")
+#endif
+
+// scope selection and configuration:
+
 #if !defined( scope_CONFIG_SELECT_SCOPE )
 # define scope_CONFIG_SELECT_SCOPE  ( scope_HAVE_STD_SCOPE ? scope_SCOPE_STD : scope_SCOPE_NONSTD )
 #endif

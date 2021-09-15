@@ -613,3 +613,15 @@ CASE( "unique_resource: " "[move-construction][deleter-copy-ctor-throws]")
     }
 }
 
+CASE( "tweak header: reads tweak header if supported " "[tweak]" )
+{
+#if scope_HAVE_TWEAK_HEADER
+    EXPECT( SCOPE_TWEAK_VALUE == 42 );
+#else
+    EXPECT( !!"Tweak header is not available (scope_HAVE_TWEAK_HEADER: 0)." );
+#endif
+}
+
+// Issues:
+
+// end of file

@@ -78,6 +78,10 @@ Depending on the compiler and C++ standard used, *scope lite* behaves less or mo
 
 ### Configuration
 
+#### Tweak header
+
+If the compiler supports [`__has_include()`](https://en.cppreference.com/w/cpp/preprocessor/include), *scope lite* supports the [tweak header](https://vector-of-bool.github.io/2020/10/04/lib-configuration.html) mechanism. Provide your *tweak header* as `nonstd/scope.tweak.hpp` in a folder in the include-search-path. In the tweak header, provide definitions as documented below, like `#define scope_CPLUSPLUS 201103L`.
+
 #### Standard selection macro
 
 \-D<b>nssg\_CPLUSPLUS</b>=199711L  
