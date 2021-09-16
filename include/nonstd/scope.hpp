@@ -13,7 +13,7 @@
 #define NONSTD_SCOPE_LITE_HPP
 
 #define scope_lite_MAJOR  0
-#define scope_lite_MINOR  1
+#define scope_lite_MINOR  2
 #define scope_lite_PATCH  0
 
 #define scope_lite_VERSION  scope_STRINGIFY(scope_lite_MAJOR) "." scope_STRINGIFY(scope_lite_MINOR) "." scope_STRINGIFY(scope_lite_PATCH)
