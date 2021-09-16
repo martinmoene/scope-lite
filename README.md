@@ -127,6 +127,10 @@ The version of *scope lite* is available via tag `[.version]`. The following tag
 
 ### A.2 scope lite test specification
 
+<details>
+<summary>click to expand</summary>
+<p>
+
 ```Text
 scope_exit: exit function is called at end of scope
 scope_exit: exit function is called at end of scope (lambda)
@@ -152,3 +156,6 @@ unique_resource: op->() provides the pointee if the resource handle is a pointer
 unique_resource: [move-construction][resource-copy-ctor-throws]
 unique_resource: [move-construction][deleter-copy-ctor-throws]
 ```
+
+</p>
+</details>
