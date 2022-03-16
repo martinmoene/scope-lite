@@ -29,8 +29,8 @@ namespace on { void exit() { ++count; } }
 
 int main()
 {
-    { auto guard = make_scope_exit(  on::exit ); } // note: on_exit w/o &
-    { auto guard = make_scope_exit( &on::exit ); } // note: &on_exit
+    { auto guard = make_scope_exit(  on::exit ); } // note: on::exit w/o &
+    { auto guard = make_scope_exit( &on::exit ); } // note: &on::exit
 
     return count;
 }
@@ -69,8 +69,7 @@ $ g++ -std=c++11 -Wall -I../include -o 01-basic 01-basic.cpp && ./01-basic || ec
 
 **Contents**  
 
-- [Documentation of C++ standard libraries extensions, version 3](#documentation-of-C-standard-libraries-extensions-version-3)
-- [Configuration](#configuration)
+- [scope-lite - C++ standard libraries extensions, version 3: Generic scope and RAII Wrapper.](#scope-lite---c-standard-libraries-extensions-version-3-generic-scope-and-raii-wrapper)
 
 ### Documentation of C++ standard libraries extensions, version 3
 

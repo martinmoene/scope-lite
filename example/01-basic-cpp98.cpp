@@ -8,8 +8,8 @@ namespace on { void exit() { ++count; } }
 
 int main()
 {
-    { scope_exit<> guard = make_scope_exit(  on::exit ); } // note: on_exit w/o &
-    { scope_exit<> guard = make_scope_exit( &on::exit ); } // note: &on_exit
+    { scope_exit<> guard = make_scope_exit(  on::exit ); } // note: on::exit w/o &
+    { scope_exit<> guard = make_scope_exit( &on::exit ); } // note: &on::exit
 
     return count;
 }
