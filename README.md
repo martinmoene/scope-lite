@@ -80,7 +80,7 @@ Depending on the compiler and C++ standard used, *scope lite* behaves less or mo
 
 #### constexpr scope guards
 
-With C++20, scope guards can be `constexpr`. This is a configurable extension with respect to the proposal's specification, see section Configuration, [Disable constexpr extension](#Disable-constexpr-extension).
+With C++20, scope guards can be `constexpr`. This is a configurable extension with respect to the proposal's specification, see section Configuration, [Disable constexpr extension](#disable-constexpr-extension).
 
 Here is an [example](https://godbolt.org/z/63GWaaG3h) of `constexpr` scope guards on Compiler Explorer.
 
