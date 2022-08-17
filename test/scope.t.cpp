@@ -42,6 +42,31 @@ void success()
 }
 } // namespace on
 
+#if scope_CPP11_OR_GREATER
+
+namespace cexpr {
+
+scope_constexpr_ext
+void exit()
+{
+    is_called = true;
+}
+
+scope_constexpr_ext
+void fail()
+{
+    is_called = true;
+}
+
+scope_constexpr_ext
+void success()
+{
+    is_called = true;
+}
+
+} // namespace cexpr
+#endif // scope_CPP11_OR_GREATER
+
 CASE( "scope_exit: exit function is called at end of scope" )
 {
     is_called = false;
@@ -71,6 +96,23 @@ CASE( "scope_exit: exit function is called at end of scope (lambda)" )
     EXPECT( is_called );
 #else
     EXPECT( !!"lambda is not available (no C++11)" );
+#endif
+}
+
+CASE( "scope_exit: exit function is called at end of scope (constexpr)" " [extension]" )
+{
+#if scope_CPP11_OR_GREATER
+    is_called = false;
+
+    // scope:
+    {
+        auto guard = make_scope_exit( cexpr::exit );
+        // auto guard = make_scope_exit( [](){ is_called = true; } );
+    }
+
+    EXPECT( is_called );
+#else
+    EXPECT( !!"Test for constexpr scope_exit not suitable for C++98." );
 #endif
 }
 
@@ -127,6 +169,24 @@ CASE( "scope_fail: exit function is called when an exception occurs" )
     EXPECT( is_called );
 }
 
+CASE( "scope_fail: exit function is called when an exception occurs (lambda)" )
+{
+#if scope_USE_POST_CPP98_VERSION
+    is_called = false;
+
+    try
+    {
+        auto guard = make_scope_fail( [](){ is_called = true; } );
+        throw std::exception();
+    }
+    catch(...) {}
+
+    EXPECT( is_called );
+#else
+    EXPECT( !!"lambda is not available (no C++11)" );
+#endif
+}
+
 CASE( "scope_fail: exit function is not called when no exception occurs" )
 {
     is_called = false;
@@ -143,6 +203,24 @@ CASE( "scope_fail: exit function is not called when no exception occurs" )
     catch(...) {}
 
     EXPECT_NOT( is_called );
+}
+
+CASE( "scope_fail: exit function is not called when no exception occurs (constexpr)" " [extension]" )
+{
+#if scope_CPP11_OR_GREATER
+    is_called = false;
+
+    try
+    {
+        auto guard = make_scope_fail( cexpr::fail );
+        // throw std::exception();
+    }
+    catch(...) {}
+
+    EXPECT_NOT( is_called );
+#else
+    EXPECT( !!"Test for constexpr scope_fail not suitable for C++98." );
+#endif
 }
 
 CASE( "scope_fail: exit function is not called when released" )
@@ -181,6 +259,42 @@ CASE( "scope_success: exit function is called when no exception occurs" )
     catch(...) {}
 
     EXPECT( is_called );
+}
+
+CASE( "scope_success: exit function is called when no exception occurs (lambda)" )
+{
+#if scope_USE_POST_CPP98_VERSION
+    is_called = false;
+
+    try
+    {
+        auto guard = make_scope_success( [](){ is_called = true; } );
+        // throw std::exception();
+    }
+    catch(...) {}
+
+    EXPECT( is_called );
+#else
+    EXPECT( !!"lambda is not available (no C++11)" );
+#endif
+}
+
+CASE( "scope_success: exit function is called when no exception occurs (constexpr)" " [extension]" )
+{
+#if scope_CPP11_OR_GREATER
+    is_called = false;
+
+    try
+    {
+        auto guard = make_scope_success( cexpr::success );
+        // throw std::exception();
+    }
+    catch(...) {}
+
+    EXPECT( is_called );
+#else
+    EXPECT( !!"Test for constexpr scope_success not suitable for C++98." );
+#endif
 }
 
 CASE( "scope_success: exit function is not called when an exception occurs" )
@@ -611,6 +725,14 @@ CASE( "unique_resource: " "[move-construction][deleter-copy-ctor-throws]")
 #endif
         EXPECT( cr.get() == 7u );
     }
+}
+
+CASE( "TODO: unique_resource: ... (constexpr)" " [extension]" )
+{
+#if scope_CPP11_OR_GREATER
+#else
+    EXPECT( !!"Test for constexpr unique_resource not suitable for C++98." );
+#endif
 }
 
 CASE( "tweak header: reads tweak header if supported " "[tweak]" )

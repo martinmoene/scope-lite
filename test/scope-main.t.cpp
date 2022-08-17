@@ -36,6 +36,8 @@ CASE( "scope-lite configuration" "[.scope][.config]" )
     scope_PRESENT( scope_SCOPE_NONSTD );
     scope_PRESENT( scope_SCOPE_STD );
     scope_PRESENT( scope_CONFIG_SELECT_SCOPE );
+    scope_PRESENT( scope_CONFIG_NO_EXTENSIONS );
+    scope_PRESENT( scope_CONFIG_NO_CONSTEXPR );
     // scope_PRESENT( scope_CONFIG_NO_EXCEPTIONS );
     scope_PRESENT( scope_USE_POST_CPP98_VERSION );
     scope_PRESENT( scope_CPLUSPLUS );

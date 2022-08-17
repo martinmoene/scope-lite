@@ -45,9 +45,13 @@
 # define scope_CONFIG_SELECT_SCOPE  ( scope_HAVE_STD_SCOPE ? scope_SCOPE_STD : scope_SCOPE_NONSTD )
 #endif
 
-// #if !defined( scope_CONFIG_STRICT )
-// # define scope_CONFIG_STRICT  0
-// #endif
+#if !defined( scope_CONFIG_NO_EXTENSIONS )
+# define scope_CONFIG_NO_EXTENSIONS  0
+#endif
+
+#if !defined( scope_CONFIG_NO_CONSTEXPR )
+# define scope_CONFIG_NO_CONSTEXPR  (scope_CONFIG_NO_EXTENSIONS || !scope_CPP20_OR_GREATER)
+#endif
 
 // C++ language version detection (C++23 is speculative):
 // Note: VC14.0/1900 (VS2015) lacks too much from C++14.
@@ -258,6 +262,12 @@ namespace nonstd
 # define scope_constexpr14 constexpr
 #else
 # define scope_constexpr14 /*constexpr*/
+#endif
+
+#if !scope_CONFIG_NO_CONSTEXPR
+#define scope_constexpr_ext  constexpr
+#else
+# define scope_constexpr_ext /*constexpr*/
 #endif
 
 #if scope_HAVE( IS_DELETE )
@@ -559,6 +569,28 @@ struct type_identity { typedef T type; };
 
 } // namepsace std20
 
+namespace detail {
+
+#if scope_CONFIG_NO_CONSTEXPR
+
+using std17::uncaught_exceptions;
+
+#else
+constexpr int uncaught_exceptions() noexcept
+{
+    if ( std::is_constant_evaluated() )
+    {
+        return 0;
+    }
+    else
+    {
+        return std17::uncaught_exceptions();
+    }
+}
+#endif
+
+} // namespace detail
+
 //
 // For reference:
 //
@@ -647,7 +679,7 @@ public:
             && std11::is_constructible<EF, Fn>::value
         ))
     >
-    explicit scope_exit( Fn&& fn )
+    scope_constexpr_ext explicit scope_exit( Fn&& fn )
     scope_noexcept_op
     ((
         std11::is_nothrow_constructible<EF, Fn>::value
@@ -660,7 +692,7 @@ public:
         , execute_on_destruction( true )
     {}
 
-    scope_exit( scope_exit && other )
+    scope_constexpr_ext scope_exit( scope_exit && other )
     scope_noexcept_op
     ((
         std11::is_nothrow_move_constructible<EF>::value
@@ -672,22 +704,22 @@ public:
         other.release();
     }
 
-    ~scope_exit() scope_noexcept
+    scope_constexpr_ext ~scope_exit() scope_noexcept
     {
         if ( execute_on_destruction )
             exit_function();
     }
 
-    void release() scope_noexcept
+    scope_constexpr_ext void release() scope_noexcept
     {
         execute_on_destruction = false;
     }
 
 scope_is_delete_access:
-    scope_exit( scope_exit const & ) scope_is_delete;
+    scope_constexpr_ext scope_exit( scope_exit const & ) scope_is_delete;
 
-    scope_exit & operator=( scope_exit const & ) scope_is_delete;
-    scope_exit & operator=( scope_exit &&      ) scope_is_delete;
+    scope_constexpr_ext scope_exit & operator=( scope_exit const & ) scope_is_delete;
+    scope_constexpr_ext scope_exit & operator=( scope_exit &&      ) scope_is_delete;
 
 private:
     EF exit_function;
@@ -706,7 +738,7 @@ public:
             && std11::is_constructible<EF, Fn>::value
         ))
     >
-    explicit scope_fail( Fn&& fn )
+    scope_constexpr_ext explicit scope_fail( Fn&& fn )
     scope_noexcept_op
     ((
         std11::is_nothrow_constructible<EF, Fn>::value
@@ -715,10 +747,10 @@ public:
         : exit_function(
             conditional_forward<Fn>( std::forward<Fn>(fn)
             , std11::bool_constant< std11::is_nothrow_constructible<EF, Fn>::value >() ) )
-        , uncaught_on_creation( std17::uncaught_exceptions() )
+        , uncaught_on_creation( detail::uncaught_exceptions() )
     {}
 
-    scope_fail( scope_fail && other )
+    scope_constexpr_ext scope_fail( scope_fail && other )
     scope_noexcept_op
     ((
         std11::is_nothrow_move_constructible<EF>::value
@@ -730,26 +762,26 @@ public:
         other.release();
     }
 
-    ~scope_fail() scope_noexcept
+    scope_constexpr_ext ~scope_fail() scope_noexcept
     {
-        if ( uncaught_on_creation < std17::uncaught_exceptions() )
+        if ( uncaught_on_creation < detail::uncaught_exceptions() )
             exit_function();
     }
 
-    void release() scope_noexcept
+    scope_constexpr_ext void release() scope_noexcept
     {
         uncaught_on_creation = std::numeric_limits<int>::max();
     }
 
 scope_is_delete_access:
-    scope_fail( scope_fail const & ) scope_is_delete;
+    scope_constexpr_ext scope_fail( scope_fail const & ) scope_is_delete;
 
-    scope_fail & operator=( scope_fail const & ) scope_is_delete;
-    scope_fail & operator=( scope_fail &&      ) scope_is_delete;
+    scope_constexpr_ext scope_fail & operator=( scope_fail const & ) scope_is_delete;
+    scope_constexpr_ext scope_fail & operator=( scope_fail &&      ) scope_is_delete;
 
 private:
     EF exit_function;
-    int uncaught_on_creation; // { std17::uncaught_exceptions() };
+    int uncaught_on_creation; // { detail::uncaught_exceptions() };
 };
 
 // scope_success:
@@ -764,7 +796,7 @@ public:
             && std11::is_constructible<EF, Fn>::value
         ))
     >
-    explicit scope_success( Fn&& fn )
+    scope_constexpr_ext explicit scope_success( Fn&& fn )
     scope_noexcept_op
     ((
         std11::is_nothrow_constructible<EF, Fn>::value
@@ -773,10 +805,10 @@ public:
         : exit_function(
             conditional_forward<Fn>( std::forward<Fn>(fn)
             , std11::bool_constant< std11::is_nothrow_constructible<EF, Fn>::value >() ) )
-        , uncaught_on_creation( std17::uncaught_exceptions() )
+        , uncaught_on_creation( detail::uncaught_exceptions() )
     {}
 
-    scope_success( scope_success && other )
+    scope_constexpr_ext scope_success( scope_success && other )
     scope_noexcept_op
     ((
         std11::is_nothrow_move_constructible<EF>::value
@@ -788,26 +820,26 @@ public:
         other.release();
     }
 
-    ~scope_success() scope_noexcept
+    scope_constexpr_ext ~scope_success() scope_noexcept
     {
-        if ( uncaught_on_creation >= std17::uncaught_exceptions() )
+        if ( uncaught_on_creation >= detail::uncaught_exceptions() )
             exit_function();
     }
 
-    void release() scope_noexcept
+    scope_constexpr_ext void release() scope_noexcept
     {
         uncaught_on_creation = -1;
     }
 
 scope_is_delete_access:
-    scope_success( scope_success const & ) scope_is_delete;
+    scope_constexpr_ext scope_success( scope_success const & ) scope_is_delete;
 
-    scope_success & operator=( scope_success const & ) scope_is_delete;
-    scope_success & operator=( scope_success &&      ) scope_is_delete;
+    scope_constexpr_ext scope_success & operator=( scope_success const & ) scope_is_delete;
+    scope_constexpr_ext scope_success & operator=( scope_success &&      ) scope_is_delete;
 
 private:
     EF exit_function;
-    int uncaught_on_creation; // { std17::uncaught_exceptions() };
+    int uncaught_on_creation; // { detail::uncaught_exceptions() };
 };
 
 #if scope_HAVE( DEDUCTION_GUIDES )
@@ -819,6 +851,7 @@ template< class EF > scope_success(EF) -> scope_success<EF>;
 // optional factory functions (should at least be present for LFTS3):
 
 template< class EF >
+scope_constexpr_ext
 scope_exit<typename std11::decay<EF>::type>
 make_scope_exit( EF && exit_function )
 {
@@ -826,6 +859,7 @@ make_scope_exit( EF && exit_function )
 }
 
 template< class EF >
+scope_constexpr_ext
 scope_fail<typename std11::decay<EF>::type>
 make_scope_fail( EF && exit_function )
 {
@@ -833,6 +867,7 @@ make_scope_fail( EF && exit_function )
 }
 
 template< class EF >
+scope_constexpr_ext
 scope_success<typename std11::decay<EF>::type>
 make_scope_success( EF && exit_function )
 {
@@ -1197,7 +1232,7 @@ struct on_fail_policy
     mutable int ucount_;
 
     on_fail_policy()
-        : ucount_( std17::uncaught_exceptions() )
+        : ucount_( detail::uncaught_exceptions() )
     {}
 
     on_fail_policy( on_fail_policy const & other )
@@ -1213,7 +1248,7 @@ struct on_fail_policy
 
     bool perform()
     {
-        return ucount_ < std17::uncaught_exceptions();
+        return ucount_ < detail::uncaught_exceptions();
     }
 };
 
@@ -1222,7 +1257,7 @@ struct on_success_policy
     mutable int ucount_;
 
     on_success_policy()
-        : ucount_( std17::uncaught_exceptions() )
+        : ucount_( detail::uncaught_exceptions() )
     {}
 
     on_success_policy( on_success_policy const & other )
@@ -1238,7 +1273,7 @@ struct on_success_policy
 
     bool perform()
     {
-        return ucount_ >= std17::uncaught_exceptions();
+        return ucount_ >= detail::uncaught_exceptions();
     }
 };
 

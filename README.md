@@ -83,15 +83,25 @@ If the compiler supports [`__has_include()`](https://en.cppreference.com/w/cpp/p
 
 #### Standard selection macro
 
-\-D<b>nssg\_CPLUSPLUS</b>=199711L  
+\-D<b>scope\_CPLUSPLUS</b>=199711L  
 Define this macro to override the auto-detection of the supported C++ standard, if your compiler does not set the `__cplusplus` macro correctly.
 
 #### Select standard library version or *scope lite*
 
 At default, *scope lite* uses the standard library's version if it is available and lets you use it via namespace `nonstd`. You can however override this default and explicitly request to use the standard's version or *scope lite*'s header via the following macros.
 
--D<b>nssg\_CONFIG\_SELECT\_SCOPE</b>=scope_SCOPE_DEFAULT  
+-D<b>scope\_CONFIG\_SELECT\_SCOPE</b>=scope_SCOPE_DEFAULT  
 Define this to `scope_SCOPE_STD` to select standard's version. Define this to `scope_SCOPE_NONSTD` to select *scope lite*. Default is undefined, which has the same effect as defining to `scope_SCOPE_DEFAULT`.
+
+#### Disable extensions
+
+-D<b>scope\_CONFIG\_NO\_EXTENSIONS</b>=0  
+Define this to 1 if you want to compile without extensions. Default is undefined.
+
+#### Disable constexpr extension
+
+-D<b>scope\_CONFIG\_NO\_CONSTEXPR</b>=0  
+Define this to 1 if you want to adhere to [C++ standard libraries extensions, version 3](https://en.cppreference.com/w/cpp/experimental/lib_extensions_3) and not use `constexpr` scope guards. Default is undefined.
 
 ## Reported to work with
 
@@ -133,12 +143,17 @@ The version of *scope lite* is available via tag `[.version]`. The following tag
 ```Text
 scope_exit: exit function is called at end of scope
 scope_exit: exit function is called at end of scope (lambda)
+scope_exit: exit function is called at end of scope (constexpr) [extension]
 scope_exit: exit function is called when an exception occurs
 scope_exit: exit function is not called at end of scope when released
 scope_fail: exit function is called when an exception occurs
+scope_fail: exit function is called when an exception occurs (lambda)
 scope_fail: exit function is not called when no exception occurs
+scope_fail: exit function is not called when no exception occurs (constexpr) [extension]
 scope_fail: exit function is not called when released
 scope_success: exit function is called when no exception occurs
+scope_success: exit function is called when no exception occurs (lambda)
+scope_success: exit function is called when no exception occurs (constexpr) [extension]
 scope_success: exit function is not called when an exception occurs
 scope_success: exit function is not called when released
 unique_resource: a successfully acquired resource is deleted
@@ -154,6 +169,7 @@ unique_resource: op*() provides the pointee if the resource handle is a pointer
 unique_resource: op->() provides the pointee if the resource handle is a pointer 
 unique_resource: [move-construction][resource-copy-ctor-throws]
 unique_resource: [move-construction][deleter-copy-ctor-throws]
+tweak header: reads tweak header if supported [tweak]
 ```
 
 </p>
