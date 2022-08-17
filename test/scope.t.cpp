@@ -47,21 +47,37 @@ void success()
 namespace cexpr {
 
 scope_constexpr_ext
-void exit()
+bool is_called_exit()
 {
-    is_called = true;
+    bool result = false;
+    {
+        auto change = nonstd::make_scope_exit( [&]{ result = true; });
+    }
+    return result;
 }
 
 scope_constexpr_ext
-void fail()
+bool is_called_fail()
 {
-    is_called = true;
+    bool result = false;
+    try
+    {
+        auto change = nonstd::make_scope_fail( [&]{ result = true; });
+        // throw std::exception();
+    }
+    catch(...) {}
+    return result;
 }
 
 scope_constexpr_ext
-void success()
+bool is_called_success()
 {
-    is_called = true;
+    bool result = false;
+    {
+        auto guard = make_scope_success( [&](){ result = true; } );
+        // throw std::exception();
+    }
+    return result;
 }
 
 } // namespace cexpr
@@ -102,15 +118,7 @@ CASE( "scope_exit: exit function is called at end of scope (lambda)" )
 CASE( "scope_exit: exit function is called at end of scope (constexpr)" " [extension]" )
 {
 #if scope_CPP11_OR_GREATER
-    is_called = false;
-
-    // scope:
-    {
-        auto guard = make_scope_exit( cexpr::exit );
-        // auto guard = make_scope_exit( [](){ is_called = true; } );
-    }
-
-    EXPECT( is_called );
+    EXPECT( cexpr::is_called_exit() );
 #else
     EXPECT( !!"Test for constexpr scope_exit not suitable for C++98." );
 #endif
@@ -208,16 +216,7 @@ CASE( "scope_fail: exit function is not called when no exception occurs" )
 CASE( "scope_fail: exit function is not called when no exception occurs (constexpr)" " [extension]" )
 {
 #if scope_CPP11_OR_GREATER
-    is_called = false;
-
-    try
-    {
-        auto guard = make_scope_fail( cexpr::fail );
-        // throw std::exception();
-    }
-    catch(...) {}
-
-    EXPECT_NOT( is_called );
+    EXPECT_NOT( cexpr::is_called_fail() );
 #else
     EXPECT( !!"Test for constexpr scope_fail not suitable for C++98." );
 #endif
@@ -282,16 +281,7 @@ CASE( "scope_success: exit function is called when no exception occurs (lambda)"
 CASE( "scope_success: exit function is called when no exception occurs (constexpr)" " [extension]" )
 {
 #if scope_CPP11_OR_GREATER
-    is_called = false;
-
-    try
-    {
-        auto guard = make_scope_success( cexpr::success );
-        // throw std::exception();
-    }
-    catch(...) {}
-
-    EXPECT( is_called );
+    EXPECT( cexpr::is_called_success() );
 #else
     EXPECT( !!"Test for constexpr scope_success not suitable for C++98." );
 #endif
