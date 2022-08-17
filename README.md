@@ -49,7 +49,7 @@ $ g++ -std=c++11 -Wall -I../include -o 01-basic 01-basic.cpp && ./01-basic || ec
 
 **scope lite** is a single-file header-only library to provide [C++ standard libraries extensions, version 3](https://en.cppreference.com/w/cpp/experimental/lib_extensions_3) for use with C++98 and later. If available, the standard library is used, unless [configured](#configuration) otherwise.
 
-**Features and properties of scope lite** are ease of installation (single header), freedom of dependencies other than the standard library.
+**Features and properties of scope lite** are ease of installation (single header), freedom of dependencies other than the standard library. With C++20, scope guards can be `constexpr`. This is a configurable extension with respect to the proposal's specification.
 
 **Limitations of scope lite** are ... .
 
@@ -68,12 +68,21 @@ $ g++ -std=c++11 -Wall -I../include -o 01-basic 01-basic.cpp && ./01-basic || ec
 ## Synopsis
 
 **Contents**  
-
-- [scope-lite - C++ standard libraries extensions, version 3: Generic scope and RAII Wrapper.](#scope-lite---c-standard-libraries-extensions-version-3-generic-scope-and-raii-wrapper)
+[Documentation of C++ standard libraries extensions, version 3](#documentation-of-c-standard-libraries-extensions-version-3)  
+[Non-standard extensions](#non-standard-extensions)  
+[Configuration](#configuration)  
 
 ### Documentation of C++ standard libraries extensions, version 3
 
 Depending on the compiler and C++ standard used, *scope lite* behaves less or more like the standard's version. To get an idea of the capabilities of *scope lite* with your configuration, look at the output of the [tests](test/scope.t.cpp), issuing `scope-main.t --pass @`. For the standard's documentation, see [C++ standard libraries extensions, version 3](https://en.cppreference.com/w/cpp/experimental/lib_extensions_3).  
+
+### Non-standard extensions
+
+#### constexpr scope guards
+
+With C++20, scope guards can be `constexpr`. This is a configurable extension with respect to the proposal's specification, see section Configuration, [Disable constexpr extension](#Disable-constexpr-extension).
+
+Here is an [example](https://godbolt.org/z/63GWaaG3h) of `constexpr` scope guards on Compiler Explorer.
 
 ### Configuration
 
