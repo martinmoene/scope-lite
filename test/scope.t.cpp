@@ -73,10 +73,12 @@ scope_constexpr_ext
 bool is_called_success()
 {
     bool result = false;
+    try
     {
         auto guard = make_scope_success( [&](){ result = true; } );
         // throw std::exception();
     }
+    catch(...) {}
     return result;
 }
 
