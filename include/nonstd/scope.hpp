@@ -72,9 +72,12 @@
 #define scope_CPP23_OR_GREATER  ( scope_CPLUSPLUS >= 202300L )
 
 // Use C++yy <scope> if available and requested:
+// Note: __cpp_lib_experimental_scope: a value of at least 201902 indicates that the scope guard are supported
 
 #if scope_CPP20_OR_GREATER && defined(__has_include )
-# if __has_include( <scope> )
+# if   __has_include( <scope> )
+#  define scope_HAVE_STD_SCOPE  1
+# elif __has_include( <experimental/scope> )
 #  define scope_HAVE_STD_SCOPE  1
 # else
 #  define scope_HAVE_STD_SCOPE  0
@@ -87,6 +90,10 @@
 
 //
 // Using std <scope>:
+//
+// ToDo:
+// - choose <scope> or <experimental/scope>.
+// - use correct namespace in using below.
 //
 
 #if scope_USES_STD_SCOPE

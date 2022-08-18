@@ -106,6 +106,12 @@ CASE( "Presence of C++ library features" "[.stdlibrary]" )
 #else
     scope_ABSENT(  _HAS_CPP0X );
 #endif
+
+#if defined __cpp_lib_experimental_scope
+    scope_PRESENT( __cpp_lib_experimental_scope );
+#else
+    scope_ABSENT(  __cpp_lib_experimental_scope );
+#endif
 }
 
 int main( int argc, char * argv[] )
