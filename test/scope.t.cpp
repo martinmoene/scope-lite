@@ -57,7 +57,7 @@ bool is_called_exit()
 }
 
 scope_constexpr_ext
-bool is_called_fail()
+bool is_not_called_fail()
 {
     bool result = false;
     try
@@ -218,7 +218,7 @@ CASE( "scope_fail: exit function is not called when no exception occurs" )
 CASE( "scope_fail: exit function is not called when no exception occurs (constexpr)" " [extension]" )
 {
 #if scope_CPP11_OR_GREATER
-    EXPECT_NOT( cexpr::is_called_fail() );
+    EXPECT_NOT( cexpr::is_not_called_fail() );
 #else
     EXPECT( !!"Test for constexpr scope_fail not suitable for C++98." );
 #endif
