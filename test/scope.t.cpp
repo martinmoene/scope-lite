@@ -327,6 +327,27 @@ CASE( "scope_success: exit function is not called when released" )
     EXPECT_NOT( is_called );
 }
 
+CASE( "scope_success: exit function can throw (lambda)" )
+{
+#if scope_USE_POST_CPP98_VERSION
+    is_called = false;
+
+    try
+    {
+        {
+            //skipped_guard is expected to not be called, as the destructor of guard will throw.
+            auto skipped_guard = make_scope_success( [](){ is_called = false; } );
+            auto guard = make_scope_success( [](){ is_called = true; throw 0; } );
+        }
+    }
+    catch(...) {}
+
+    EXPECT( is_called );
+#else
+    EXPECT( !!"lambda is not available (no C++11)" );
+#endif
+}
+
 // resource type to test unique_resource:
 
 struct Resource
