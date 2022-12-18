@@ -828,7 +828,7 @@ public:
     }
 
     scope_constexpr_ext ~scope_success() scope_noexcept_op(
-        scope_noexcept_op(exit_function())
+        scope_noexcept_op(this->exit_function())
     )
     {
         if ( uncaught_on_creation >= detail::uncaught_exceptions() )
