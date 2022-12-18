@@ -165,6 +165,7 @@ scope_success: exit function is called when no exception occurs (lambda)
 scope_success: exit function is called when no exception occurs (constexpr) [extension]
 scope_success: exit function is not called when an exception occurs
 scope_success: exit function is not called when released
+scope_success: exit function can throw (lambda)
 unique_resource: a successfully acquired resource is deleted
 unique_resource: an unsuccessfully acquired resource is not deleted
 unique_resource: move construction moves the managed resource and the deleter from the give one's [move-construction]
