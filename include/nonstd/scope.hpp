@@ -828,9 +828,7 @@ public:
     }
 
     scope_constexpr_ext ~scope_success()
-#if scope_BETWEEN(scope_COMPILER_GNUC_VERSION, 1, 900) // GCC < 9, issue #12
-        scope_noexcept_op( scope_noexcept_op(exit_function()) )
-#else
+#if !scope_BETWEEN(scope_COMPILER_GNUC_VERSION, 1, 900) // GCC >= 9, issue #12
         scope_noexcept_op( scope_noexcept_op(this->exit_function()) )
 #endif
     {
