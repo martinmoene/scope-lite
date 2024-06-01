@@ -124,6 +124,7 @@ TBD
 ## Other implementations of scope
 
 - [Example implementation](https://github.com/PeterSommerlad/SC22WG21_Papers/tree/master/workspace/P0052_scope_exit/src). Peter Sommerlad. 2018.
+- [scope_guard](https://github.com/ricab/scope_guard) &ndash; A modern C++11 scope guard that is easy to use but hard to misuse. Ricardo Abreu.
 
 ## Notes and references
 
