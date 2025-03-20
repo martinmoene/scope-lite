@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020-2020 Martin Moene
+// Copyright (c) 2020-2025 Martin Moene
 //
 // https://github.com/martinmoene/scope-lite
 //
@@ -77,24 +77,21 @@
 #if scope_CPP20_OR_GREATER && defined(__has_include )
 # if   __has_include( <scope> )
 #  define scope_HAVE_STD_SCOPE  1
+#  define scope_HAVE_EXP_SCOPE  0
 # elif __has_include( <experimental/scope> )
-#  define scope_HAVE_STD_SCOPE  1
+#  define scope_HAVE_STD_SCOPE  0
+#  define scope_HAVE_EXP_SCOPE  1
 # else
 #  define scope_HAVE_STD_SCOPE  0
+#  define scope_HAVE_EXP_SCOPE  0
 # endif
 #else
 # define  scope_HAVE_STD_SCOPE  0
+# define  scope_HAVE_EXP_SCOPE  0
 #endif
 
 #define  scope_USES_STD_SCOPE  ( (scope_CONFIG_SELECT_SCOPE == scope_SCOPE_STD) || ((scope_CONFIG_SELECT_SCOPE == scope_SCOPE_DEFAULT) && scope_HAVE_STD_SCOPE) )
-
-//
-// Using std <scope>:
-//
-// ToDo:
-// - choose <scope> or <experimental/scope>.
-// - use correct namespace in using below.
-//
+#define  scope_USES_EXP_SCOPE  ( (scope_CONFIG_SELECT_SCOPE == scope_SCOPE_STD) || ((scope_CONFIG_SELECT_SCOPE == scope_SCOPE_DEFAULT) && scope_HAVE_EXP_SCOPE) )
 
 #if scope_USES_STD_SCOPE
 
@@ -111,6 +108,23 @@ namespace nonstd
     using std::make_scope_fail;
     using std::make_scope_success;
     using std::make_unique_resource_checked;
+}
+
+#elif scope_USES_EXP_SCOPE
+
+#include <experimental/scope>
+
+namespace nonstd
+{
+    using std::experimental::scope_exit;
+    using std::experimental::scope_fail;
+    using std::experimental::scope_success;
+    using std::experimental::unique_resource;
+
+    using std::experimental::make_scope_exit;
+    using std::experimental::make_scope_fail;
+    using std::experimental::make_scope_success;
+    using std::experimental::make_unique_resource_checked;
 }
 
 #else // scope_USES_STD_SCOPE
