@@ -114,7 +114,14 @@ Define this to 1 if you want to adhere to [C++ standard libraries extensions, ve
 
 ## Reported to work with
 
-TBD
+The table below mentions the compiler versions *scope lite* is reported to work with.
+
+OS            | Compiler   | Where          | Versions               |
+-------------:|:-----------|:---------------|:-----------------------|
+**GNU/Linux** | Clang/LLVM | GitHub Actions | 11.1.0, 12.0.1, 19.1.1 |
+ &nbsp;       | GCC        | GitHub Actions | 9.5.0, 10.5.0, 11.4.0  |
+**macOS**     | ?          | Local          | ?                      |
+**Windows**   | Visual C++<br>(Visual Studio)| GitHub Actions | 16 (2019), 17 (2022) |
 
 <!-- ## Building the tests
 
