@@ -249,7 +249,8 @@ namespace nonstd
 #define scope_HAVE_IS_NOTHROW_ASSIGNABLE  scope_CPP11_110
 #define scope_HAVE_IS_NOTHROW_MOVE_ASSIGNABLE  scope_CPP11_110
 
-#define scope_HAVE_REFERENCE_WRAPPER      scope_CPP11_110
+#define scope_HAVE_FUNCATIONAL            scope_CPP11_110
+#define scope_HAVE_REFERENCE_WRAPPER      scope_HAVE_FUNCATIONAL
 
 #define scope_HAVE_REMOVE_CV              scope_CPP11_90
 #define scope_HAVE_REMOVE_REFERENCE       scope_CPP11_90
@@ -328,6 +329,10 @@ namespace nonstd
 #include <exception>    // exception, terminate(), uncaught_exceptions()
 #include <limits>       // std::numeric_limits<>
 #include <utility>      // move(), forward<>(), swap()
+
+#if scope_HAVE_FUNCATIONAL
+# include <functional>
+#endif
 
 #if scope_HAVE_TYPE_TRAITS
 # include <type_traits>
