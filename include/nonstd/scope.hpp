@@ -980,34 +980,15 @@ public:
     // The stored resource handle is initialized from the one of other, using std::move if
     // std::is_nothrow_move_constructible_v<RS> is true.
     //
-    // If initialization of the stored resource handle throws an exception, other is not modified.
-    //
-    // Then, the deleter is initialized with the one of other, using std::move if
-    // std::is_nothrow_move_constructible_v<D> is true.
-    //
-    // If initialization of the deleter throws an exception and std::is_nothrow_move_constructible_v<RS> is true and
-    // other owns the resource, calls the deleter of other with res_ to dispose the resource, then calls other.release().
-    //
-    // After construction, the constructed unique_resource owns its resource if and only if other owned the resource before
-    // the construction, and other is set to not own the resource.
 
     unique_resource( unique_resource && other )
         scope_noexcept_op(
             std11::is_nothrow_move_constructible<R1>::value && std11::is_nothrow_move_constructible<D>::value
         )
-    try
         : resource( conditional_move( std::move(other.resource), typename std11::bool_constant< std11::is_nothrow_move_assignable<R>::value >() ) )
         , deleter(  conditional_move( std::move(other.deleter ), typename std11::bool_constant< std11::is_nothrow_move_constructible<D>::value >() ) )
         , execute_on_reset( std14::exchange( other.execute_on_reset, false ) )
     {}
-    catch(...)
-    {
-        if ( other.execute_on_reset && std11::is_nothrow_move_constructible<R>::value )
-        {
-            other.get_deleter()( this->get() );
-            other.release();
-        }
-    }
 
     ~unique_resource()
     {
